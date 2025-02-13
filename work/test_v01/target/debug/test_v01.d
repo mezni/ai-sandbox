@@ -1,0 +1,1 @@
+/home/mohamed/analytics/work/test_v01/target/debug/test_v01: /home/mohamed/analytics/work/test_v01/src/event_generator/generator.rs /home/mohamed/analytics/work/test_v01/src/event_generator/mod.rs /home/mohamed/analytics/work/test_v01/src/main.rs
