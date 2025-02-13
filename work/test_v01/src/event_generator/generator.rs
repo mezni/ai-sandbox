@@ -1,5 +1,5 @@
-use rand::Rng;
 use chrono::{DateTime, Utc};
+use rand::Rng;
 
 #[derive(Debug)]
 pub struct Event {
