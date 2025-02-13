@@ -5,7 +5,7 @@ use tokio::sync::mpsc;
 #[tokio::main]
 async fn main() {
     // Create a channel for event communication
-    let event_generator = event_generator::EventGenerator::new(10);
+    let event_generator = event_generator::EventGenerator::new(1000);
     let (tx, mut rx) = mpsc::channel(10);
 
     // Send all events
