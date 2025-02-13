@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 #[derive(Debug)]
 pub struct Event {
     pub mac_address: String,
-    pub event_time: DateTime<chrono::Utc>,
+    pub event_time: DateTime<Utc>,
 }
 
 // EventGenerator struct
@@ -15,7 +15,7 @@ pub struct EventGenerator {
 impl EventGenerator {
     // Initialize the EventGenerator with 10 random MAC addresses
     pub fn new(size: u64) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mac_addresses: Vec<String> = (0..size)
             .map(|_| {
                 let mac: [u8; 6] = rng.random();
@@ -31,7 +31,7 @@ impl EventGenerator {
 
     // Return a random MAC address
     pub fn random_mac(&self) -> String {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         self.mac_addresses[rng.random_range(0..self.mac_addresses.len())].clone()
     }
 }
@@ -40,10 +40,10 @@ impl Iterator for EventGenerator {
     type Item = Event;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Randomly select a MAC address from the pre-generated list
-        let mac_address = self.mac_addresses[rng.gen_range(0..self.mac_addresses.len())].clone();
+        let mac_address = self.mac_addresses[rng.random_range(0..self.mac_addresses.len())].clone();
 
         // Generate the current timestamp
         let event_time = Utc::now();
