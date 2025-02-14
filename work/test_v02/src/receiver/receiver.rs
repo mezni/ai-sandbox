@@ -91,6 +91,7 @@ impl Receiver {
                     .sql("SELECT mac_address,max(event_time) FROM my_table GROUP BY mac_address")
                     .await?;
                 df.clone().show().await?;
+
                 Ok(())
             }
             Err(e) => {
