@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use rand::Rng;
+use serde_json::json;
 
 #[derive(Debug)]
-pub struct Event {
-    pub mac_address: String,
-    pub event_time: DateTime<Utc>,
+struct Event {
+    mac_address: String,
+    event_time: DateTime<Utc>,
 }
 
 // EventGenerator struct
@@ -30,14 +31,14 @@ impl EventGenerator {
     }
 
     // Return a random MAC address
-    pub fn random_mac(&self) -> String {
-        let mut rng = rand::rng();
-        self.mac_addresses[rng.random_range(0..self.mac_addresses.len())].clone()
-    }
+    //    pub async fn random_mac(&self) -> String {
+    //        let mut rng = rand::rng();
+    //        self.mac_addresses[rng.random_range(0..self.mac_addresses.len())].clone()
+    //    }
 }
 
 impl Iterator for EventGenerator {
-    type Item = Event;
+    type Item = serde_json::Value;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut rng = rand::rng();
@@ -48,10 +49,15 @@ impl Iterator for EventGenerator {
         // Generate the current timestamp
         let event_time = Utc::now();
 
-        // Return an Event
-        Some(Event {
+        let e = Event {
             mac_address,
             event_time,
-        })
+        };
+
+        // Return JSON
+        Some(json!({
+            "mac_address": e.mac_address,
+            "event_time": e.event_time.to_rfc3339(),
+        }))
     }
 }

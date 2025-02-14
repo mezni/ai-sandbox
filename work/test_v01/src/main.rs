@@ -1,12 +1,13 @@
-mod event_generator;
-
+mod generator;
+mod receiver;
 use tokio::sync::mpsc;
 
 #[tokio::main]
 async fn main() {
     // Create a channel for event communication
-    let event_generator = event_generator::EventGenerator::new(1000);
+    let event_generator = generator::EventGenerator::new(10);
     let (tx, mut rx) = mpsc::channel(10);
+    let mut receiver = receiver::Receiver::new(rx);
 
     // Send all events
     tokio::spawn(async move {
@@ -15,8 +16,5 @@ async fn main() {
         }
     });
 
-    // Receive all events
-    while let Some(event) = rx.recv().await {
-        println!("Received: {:#?}", event);
-    }
+    receiver.run().await;
 }
