@@ -1,5 +1,5 @@
-use tokio::sync::mpsc;
 use serde_json::Value;
+use tokio::sync::mpsc;
 
 pub struct Receiver {
     rx: mpsc::Receiver<Value>,

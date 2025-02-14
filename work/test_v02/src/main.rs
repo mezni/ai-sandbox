@@ -2,7 +2,6 @@ mod generator;
 mod receiver;
 use tokio::sync::mpsc;
 
-
 #[tokio::main]
 async fn main() {
     // Create a channel for event communication
@@ -18,5 +17,4 @@ async fn main() {
     });
 
     receiver.run().await;
-
 }
