@@ -1,8 +1,19 @@
+use datafusion::arrow::{
+    array::{Float64Array, StringArray},
+    datatypes::{DataType, Field, Schema},
+    record_batch::RecordBatch,
+};
+use datafusion::dataframe::DataFrameWriteOptions;
+use datafusion::datasource::memory::MemTable;
+use datafusion::error::{DataFusionError, Result};
+use datafusion::execution::context::SessionContext;
+use datafusion::prelude::*;
 use serde_json::Value;
-use tokio::sync::mpsc;
 use std::process;
+use std::sync::Arc;
+use tokio::sync::mpsc;
 
-const MAX_EVENTS: u32 = 10000;
+const MAX_EVENTS: usize = 100000;
 
 pub struct Receiver {
     rx: mpsc::Receiver<Value>,
@@ -15,14 +26,19 @@ impl Receiver {
 
     pub async fn run(&mut self) {
         let mut events = Vec::new();
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("mac_address", DataType::Utf8, false),
+            Field::new("event_time", DataType::Utf8, false),
+        ]));
+
         loop {
             match self.rx.recv().await {
                 Some(event) => {
-                    println!("Received event: {:?}", event);
+                    //                    println!("Received event: {:?}", event);
                     events.push(event);
-                    if events.len() >= MAX_EVENTS as usize {
+                    if events.len() >= MAX_EVENTS {
                         println!("Received {} events. Processing...", MAX_EVENTS);
-                        self.process_events(events.clone()).await;
+                        self.process_events(events.clone(), schema.clone()).await;
                         events.clear();
                         process::exit(0);
                     }
@@ -30,7 +46,7 @@ impl Receiver {
                 None => {
                     println!("Channel closed.");
                     if !events.is_empty() {
-                        self.process_events(events).await;
+                        self.process_events(events, schema.clone()).await;
                     }
                     break;
                 }
@@ -38,9 +54,49 @@ impl Receiver {
         }
     }
 
-    async fn process_events(&self, events: Vec<Value>) {
+    async fn process_events(&self, events: Vec<Value>, schema: Arc<Schema>) -> Result<()> {
         // Process the events here
         println!("Processing {} events...", events.len());
-        // Add your processing logic here
+
+        let mut mac_addresses = Vec::new();
+        let mut event_times = Vec::new();
+
+        for event in events {
+            if let Some(mac_address) = event["mac_address"].as_str() {
+                mac_addresses.push(mac_address.to_string());
+            } else {
+                println!("Error: mac_address field not found in event");
+            }
+
+            if let Some(event_time) = event["event_time"].as_str() {
+                event_times.push(event_time.to_string());
+            } else {
+                println!("Error: event_time field not found in event");
+            }
+        }
+
+        let mac_address_array =
+            Arc::new(StringArray::from(mac_addresses)) as Arc<dyn datafusion::arrow::array::Array>;
+        let event_time_array =
+            Arc::new(StringArray::from(event_times)) as Arc<dyn datafusion::arrow::array::Array>;
+
+        match RecordBatch::try_new(schema.clone(), vec![mac_address_array, event_time_array]) {
+            Ok(batch) => {
+                //                println!("{:?}", batch);
+                let table = MemTable::try_new(schema, vec![vec![batch]])?;
+                let ctx = SessionContext::new();
+                ctx.register_table("my_table", Arc::new(table))?;
+
+                let df = ctx
+                    .sql("SELECT mac_address,max(event_time) FROM my_table GROUP BY mac_address")
+                    .await?;
+                df.clone().show().await?;
+                Ok(())
+            }
+            Err(e) => {
+                println!("Error creating RecordBatch: {}", e);
+                Err(e.into())
+            }
+        }
     }
 }
