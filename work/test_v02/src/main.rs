@@ -1,10 +1,22 @@
 mod generator;
-use tokio;
+mod receiver;
+use tokio::sync::mpsc;
+
 
 #[tokio::main]
 async fn main() {
-    let mut generator = generator::EventGenerator::new(1000);
-    for _ in 0..10 {
-        println!("{:?}", generator.next());
-    }
+    // Create a channel for event communication
+    let event_generator = generator::EventGenerator::new(10);
+    let (tx, mut rx) = mpsc::channel(10);
+    let mut receiver = receiver::Receiver::new(rx);
+
+    // Send all events
+    tokio::spawn(async move {
+        for event in event_generator {
+            tx.send(event).await.unwrap();
+        }
+    });
+
+    receiver.run().await;
+
 }
