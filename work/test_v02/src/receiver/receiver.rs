@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use datafusion::arrow::{
     array::{Float64Array, StringArray},
     datatypes::{DataType, Field, Schema},
@@ -12,8 +13,7 @@ use serde_json::Value;
 use std::process;
 use std::sync::Arc;
 use tokio::sync::mpsc;
-
-const MAX_EVENTS: usize = 100000;
+const MAX_EVENTS: usize = 200000;
 
 pub struct Receiver {
     rx: mpsc::Receiver<Value>,
@@ -86,6 +86,20 @@ impl Receiver {
                 let table = MemTable::try_new(schema, vec![vec![batch]])?;
                 let ctx = SessionContext::new();
                 ctx.register_table("my_table", Arc::new(table))?;
+
+                let df = ctx.sql("SELECT * FROM my_table").await?;
+                df.clone().show().await?;
+
+                let now: DateTime<Utc> = Utc::now();
+                let output_file_name = now.format("%Y%m%d_%H%M%S_%6f.parquet").to_string();
+                let target_path = "OUTPUT/".to_owned() + &output_file_name;
+
+                df.write_parquet(
+                    &target_path,
+                    DataFrameWriteOptions::new(),
+                    None, // writer_options
+                )
+                .await;
 
                 let df = ctx
                     .sql("SELECT mac_address,max(event_time) FROM my_table GROUP BY mac_address")
