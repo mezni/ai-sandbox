@@ -26,7 +26,7 @@ pub struct Event {
 }
 
 /// Generates a random IPv4 address.
-async fn generate_random_ipv4(rng: &mut impl Rng) -> Ipv4Addr {
+ fn generate_random_ipv4(rng: &mut impl Rng) -> Ipv4Addr {
     Ipv4Addr::new(rng.random(), rng.random(), rng.random(), rng.random())
 }
 
@@ -39,7 +39,7 @@ fn generate_random_mac(rng: &mut impl Rng) -> String {
 }
 
 /// Generates a pair of events (open and close) with random data.
-async fn generate_event(rng: &mut impl Rng, mac_addresses: &[String]) -> (Event, Event) {
+ fn generate_event(rng: &mut impl Rng, mac_addresses: &[String]) -> (Event, Event) {
     let now = Utc::now();
     let start_interval = now - Duration::minutes(START_TIME_INTERVAL_MINUTES as i64);
     let random_seconds = rng.random_range(0..60);
@@ -48,9 +48,9 @@ async fn generate_event(rng: &mut impl Rng, mac_addresses: &[String]) -> (Event,
     let end_ts = start_ts + Duration::seconds(duration as i64);
 
     let mac_address = mac_addresses[rng.random_range(0..mac_addresses.len())].clone();
-    let ip_address_src = generate_random_ipv4(rng).await.to_string();
+    let ip_address_src = generate_random_ipv4(rng).to_string();
     let port_src = rng.random_range(MIN_PORT..=MAX_PORT).to_string();
-    let ip_address_dst = generate_random_ipv4(rng).await.to_string();
+    let ip_address_dst = generate_random_ipv4(rng).to_string();
     let port_dst = rng.random_range(MIN_PORT..=MAX_PORT).to_string();
 
     let event_open = Event {
@@ -91,7 +91,7 @@ impl EventGenerator {
         // Generate events and fill the buffer
         let mut buffer = Vec::with_capacity(BUFFER_SIZE);
         while buffer.len() < BUFFER_SIZE {
-            let (event_open, event_close) = generate_event(&mut rng, &mac_addresses).await;
+            let (event_open, event_close) = generate_event(&mut rng, &mac_addresses);
             buffer.push((event_open.event_time, event_open));
             buffer.push((event_close.event_time, event_close));
         }
@@ -101,10 +101,10 @@ impl EventGenerator {
             buffer,
         }
     }
-    async fn fill_buffer(&mut self) {
+     fn fill_buffer(&mut self) {
         let mut rng = rand::rng();
         while self.buffer.len() < BUFFER_SIZE {
-            let (event_open, event_close) = generate_event(&mut rng, &self.mac_addresses).await;
+            let (event_open, event_close) = generate_event(&mut rng, &self.mac_addresses);
             self.buffer.push((event_open.event_time, event_open));
             self.buffer.push((event_close.event_time, event_close));
         }
@@ -118,10 +118,7 @@ impl Iterator for EventGenerator {
         self.fill_buffer();
 
         self.buffer.sort_by_key(|(event_time, _)| *event_time);
-
-        let (event_time, event) = self.buffer.remove(0);
-
-        // Return the event as a JSON value
+        let (_, event) = self.buffer.remove(0);
         Some(json!({
             "mac_address": event.mac_address,
             "event_time": event.event_time.to_rfc3339(),
@@ -142,6 +139,7 @@ async fn main() {
         }
     */
     let start = Instant::now();
+
     let (tx, mut rx) = mpsc::channel(100);
 
     let event_generator = EventGenerator::new(1000).await;
@@ -157,9 +155,10 @@ async fn main() {
     });
 
     let mut i = 0;
+    let mut events = Vec::new();
     while let Some(event) = rx.recv().await {
         i += 1;
-        println!("{} {}", i, event);
+        events.push(event);
         /*
                 if let Some(obj) = event.as_object() {
                     //    sleep(std::time::Duration::from_millis(10)).await;
@@ -167,8 +166,10 @@ async fn main() {
                 }
         */
         if i >= 1000 {
-            // Stop after receiving 4000 events
-            break;
+            let now = Utc::now();
+            println!("{} {}", now.to_rfc3339(), events.len());
+            events = Vec::new();
+            i = 0;
         }
     }
     /*
