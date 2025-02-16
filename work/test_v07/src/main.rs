@@ -1,5 +1,7 @@
 mod event_generator;
+mod event_processor;
 use event_generator::EventGenerator;
+use event_processor::EventProcessor;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
 //use serde_json::json;
@@ -31,6 +33,7 @@ async fn main() {
         i += 1;
         events.push(event);
         if i >= BATCH_SIZE {
+            let event_processor = EventProcessor::process(events.clone());
             let now = chrono::Utc::now();
             println!("{} {}", now.to_rfc3339(), events.len());
             events = Vec::new();
