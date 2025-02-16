@@ -8,7 +8,11 @@ use std::net::Ipv4Addr;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
 
+const MAC_NUMBER: usize = 10000;
 const BUFFER_SIZE: usize = 5000;
+const CHANNEL_SIZE: usize = 100;
+const BATCH_SIZE: usize = 5000;
+
 const MIN_PORT: u16 = 1024;
 const MAX_PORT: u16 = 32000;
 const START_TIME_INTERVAL_MINUTES: u8 = 2;
@@ -26,7 +30,7 @@ pub struct Event {
 }
 
 /// Generates a random IPv4 address.
- fn generate_random_ipv4(rng: &mut impl Rng) -> Ipv4Addr {
+fn generate_random_ipv4(rng: &mut impl Rng) -> Ipv4Addr {
     Ipv4Addr::new(rng.random(), rng.random(), rng.random(), rng.random())
 }
 
@@ -39,7 +43,7 @@ fn generate_random_mac(rng: &mut impl Rng) -> String {
 }
 
 /// Generates a pair of events (open and close) with random data.
- fn generate_event(rng: &mut impl Rng, mac_addresses: &[String]) -> (Event, Event) {
+fn generate_event(rng: &mut impl Rng, mac_addresses: &[String]) -> (Event, Event) {
     let now = Utc::now();
     let start_interval = now - Duration::minutes(START_TIME_INTERVAL_MINUTES as i64);
     let random_seconds = rng.random_range(0..60);
@@ -101,7 +105,7 @@ impl EventGenerator {
             buffer,
         }
     }
-     fn fill_buffer(&mut self) {
+    fn fill_buffer(&mut self) {
         let mut rng = rand::rng();
         while self.buffer.len() < BUFFER_SIZE {
             let (event_open, event_close) = generate_event(&mut rng, &self.mac_addresses);
@@ -140,9 +144,9 @@ async fn main() {
     */
     let start = Instant::now();
 
-    let (tx, mut rx) = mpsc::channel(100);
+    let (tx, mut rx) = mpsc::channel(CHANNEL_SIZE);
 
-    let event_generator = EventGenerator::new(1000).await;
+    let event_generator = EventGenerator::new(MAC_NUMBER).await;
 
     // Start generating events in an async task
     tokio::spawn(async move {
@@ -165,7 +169,7 @@ async fn main() {
                     println!("{} {}", i, event);
                 }
         */
-        if i >= 1000 {
+        if i >= BATCH_SIZE {
             let now = Utc::now();
             println!("{} {}", now.to_rfc3339(), events.len());
             events = Vec::new();
