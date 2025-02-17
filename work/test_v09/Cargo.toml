@@ -1,0 +1,7 @@
+[package]
+name = "test_v09"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+datafusion = "45.0.0"

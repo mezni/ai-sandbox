@@ -1,97 +1,73 @@
 use serde_json::Value;
-
-pub struct EventProcessor;
-
+use std::collections::HashMap;
+use std::sync::Arc;
 use datafusion::arrow::{
-    array::{Float64Array, StringArray},
+    array::StringArray,
     datatypes::{DataType, Field, Schema},
     record_batch::RecordBatch,
 };
-use std::sync::Arc;
+
+pub struct EventProcessor;
 
 impl EventProcessor {
     pub fn process(events: Vec<Value>) {
-        let mut mac_addresses = Vec::new();
-        let mut event_times = Vec::new();
-        let mut ip_address_srcs = Vec::new();
-        let mut port_srcs = Vec::new();
-        let mut ip_address_dsts = Vec::new();
-        let mut port_dsts = Vec::new();
-        let mut event_types = Vec::new();
+        let fields = vec![
+            "mac_address", "event_time", "ip_address_src", "port_src",
+            "ip_address_dst", "port_dst", "event_type",
+        ];
+
+        let mut extracted_data: HashMap<&str, Vec<String>> = fields
+            .iter()
+            .map(|&field| (field, Vec::new()))
+            .collect();
+
         let mut discarded_events = Vec::new();
 
         for event in events {
-            let (ok_mac, mac_address) = Self::extract_field(&event, "mac_address");
-            let (ok_time, event_time) = Self::extract_field(&event, "event_time");
-            let (ok_src_ip, ip_address_src) = Self::extract_field(&event, "ip_address_src");
-            let (ok_src_port, port_src) = Self::extract_field(&event, "port_src");
-            let (ok_dst_ip, ip_address_dst) = Self::extract_field(&event, "ip_address_dst");
-            let (ok_dst_port, port_dst) = Self::extract_field(&event, "port_dst");
-            let (ok_type, event_type) = Self::extract_field(&event, "event_type");
+            let mut valid = true;
 
-            if ok_mac && ok_time && ok_src_ip && ok_src_port && ok_dst_ip && ok_dst_port && ok_type
-            {
-                mac_addresses.push(mac_address);
-                event_times.push(event_time);
-                ip_address_srcs.push(ip_address_src);
-                port_srcs.push(port_src);
-                ip_address_dsts.push(ip_address_dst);
-                port_dsts.push(port_dst);
-                event_types.push(event_type);
-            } else {
+            for &field in &fields {
+                if let Some(value) = event[field].as_str() {
+                    extracted_data.get_mut(field).unwrap().push(value.to_string());
+                } else {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if !valid {
                 discarded_events.push(event);
             }
         }
 
-        // Print valid events count
-        println!("Processed {} valid events", mac_addresses.len());
+        println!("Processed {} valid events", extracted_data["mac_address"].len());
         println!("Discarded {} invalid events", discarded_events.len());
 
-        let schema = Self::schema();
+        let schema = Self::schema(&fields);
+        let record_batch = Self::create_record_batch(schema, &fields, &extracted_data);
 
-        let mac_address_array = Arc::new(StringArray::from(mac_addresses));
-        let event_time_array = Arc::new(StringArray::from(event_times));
-        let ip_address_src_array = Arc::new(StringArray::from(ip_address_srcs));
-        let port_src_array = Arc::new(StringArray::from(port_srcs));
-        let ip_address_dst_array = Arc::new(StringArray::from(ip_address_dsts));
-        let port_dst_array = Arc::new(StringArray::from(port_dsts));
-        let event_type_array = Arc::new(StringArray::from(event_types));
-
-        match RecordBatch::try_new(
-            schema,
-            vec![
-                mac_address_array,
-                event_time_array,
-                ip_address_src_array,
-                port_src_array,
-                ip_address_dst_array,
-                port_dst_array,
-                event_type_array,
-            ],
-        ) {
+        match record_batch {
             Ok(batch) => println!("Created RecordBatch with {} rows", batch.num_rows()),
             Err(e) => eprintln!("Failed to create RecordBatch: {}", e),
         }
     }
 
-    fn extract_field(event: &Value, field: &str) -> (bool, String) {
-        if let Some(value) = event[field].as_str() {
-            (true, value.to_string())
-        } else {
-            (false, String::new())
-        }
+    fn create_record_batch(
+        schema: Arc<Schema>,
+        fields: &[&str],
+        extracted_data: &HashMap<&str, Vec<String>>,
+    ) -> Result<RecordBatch, datafusion::arrow::error::ArrowError> {
+        let arrays: Vec<_> = fields
+            .iter()
+            .map(|&field| Arc::new(StringArray::from(extracted_data[field].clone())) as _)
+            .collect();
+
+        RecordBatch::try_new(schema, arrays)
     }
 
-    fn schema() -> Arc<Schema> {
-        Arc::new(Schema::new(vec![
-            Field::new("mac_address", DataType::Utf8, false),
-            Field::new("event_time", DataType::Utf8, false),
-            Field::new("ip_address_src", DataType::Utf8, false),
-            Field::new("port_src", DataType::Utf8, false),
-            Field::new("ip_address_dst", DataType::Utf8, false),
-            Field::new("port_dst", DataType::Utf8, false),
-            Field::new("event_type", DataType::Utf8, false),
-        ]))
+    fn schema(fields: &[&str]) -> Arc<Schema> {
+        Arc::new(Schema::new(
+            fields.iter().map(|&field| Field::new(field, DataType::Utf8, false)).collect(),
+        ))
     }
 }
-
