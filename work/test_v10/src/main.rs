@@ -15,6 +15,17 @@ async fn main() {
     let start = Instant::now();
     let (tx, mut rx) = mpsc::channel(CHANNEL_SIZE);
 
+    let fields = vec![
+        "mac_address".to_string(),
+        "event_time".to_string(),
+        "ip_address_src".to_string(),
+        "port_src".to_string(),
+        "ip_address_dst".to_string(),
+        "port_dst".to_string(),
+        "event_type".to_string(),
+    ];
+    let mut event_processor = EventProcessor::new(fields);
+
     let event_generator = EventGenerator::new(MAC_NUMBER).await;
 
     // Start generating events in an async task
@@ -33,7 +44,7 @@ async fn main() {
         i += 1;
         events.push(event);
         if i >= BATCH_SIZE {
-            let event_processor = EventProcessor::process(events.clone());
+            event_processor.process(events.clone());
             let now = chrono::Utc::now();
             println!("{} {}", now.to_rfc3339(), events.len());
             events = Vec::new();

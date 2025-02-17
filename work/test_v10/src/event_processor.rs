@@ -1,73 +1,106 @@
-use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
 use datafusion::arrow::{
-    array::StringArray,
+    array::{Float64Array, StringArray},
     datatypes::{DataType, Field, Schema},
     record_batch::RecordBatch,
 };
+use datafusion::dataframe::DataFrameWriteOptions;
+use datafusion::datasource::memory::MemTable;
+use datafusion::error::{DataFusionError, Result};
+use datafusion::execution::context::SessionContext;
+use datafusion::prelude::*;
+use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct EventProcessor;
+// TO DO : add contexte to event processor
+pub struct EventProcessor {
+    fields: Vec<String>,
+    schema: Arc<Schema>,
+}
 
 impl EventProcessor {
-    pub fn process(events: Vec<Value>) {
-        let fields = vec![
-            "mac_address", "event_time", "ip_address_src", "port_src",
-            "ip_address_dst", "port_dst", "event_type",
-        ];
+    pub fn new(fields: Vec<String>) -> Self {
+        let schema = Arc::new(Schema::new(
+            fields
+                .iter()
+                .map(|field| Field::new(field.as_str(), DataType::Utf8, false))
+                .collect::<Vec<_>>(),
+        ));
+        EventProcessor { fields, schema }
+    }
 
-        let mut extracted_data: HashMap<&str, Vec<String>> = fields
-            .iter()
-            .map(|&field| (field, Vec::new()))
-            .collect();
+    pub fn process(&mut self, events: Vec<Value>) {
+        let (mut extracted_data, mut discarded_events) = self.validate_events(events);
 
-        let mut discarded_events = Vec::new();
+        println!(
+            "Processed {} Discarded {}",
+            extracted_data["mac_address"].len(),
+            discarded_events.len()
+        );
 
-        for event in events {
-            let mut valid = true;
-
-            for &field in &fields {
-                if let Some(value) = event[field].as_str() {
-                    extracted_data.get_mut(field).unwrap().push(value.to_string());
-                } else {
-                    valid = false;
-                    break;
-                }
-            }
-
-            if !valid {
-                discarded_events.push(event);
-            }
-        }
-
-        println!("Processed {} valid events", extracted_data["mac_address"].len());
-        println!("Discarded {} invalid events", discarded_events.len());
-
-        let schema = Self::schema(&fields);
-        let record_batch = Self::create_record_batch(schema, &fields, &extracted_data);
+        let record_batch = self.create_record_batch(&extracted_data);
 
         match record_batch {
-            Ok(batch) => println!("Created RecordBatch with {} rows", batch.num_rows()),
+            Ok(batch) => {
+                println!("RecordBatch with {} rows", batch.num_rows());
+                let table = MemTable::try_new(self.schema.clone(), vec![vec![batch]]);
+                let ctx = SessionContext::new();
+                //              ctx.register_table("my_table", Arc::new(table));
+                //               let df = ctx.sql("SELECT * FROM my_table");
+                //               df.clone().show();
+            }
             Err(e) => eprintln!("Failed to create RecordBatch: {}", e),
         }
     }
 
-    fn create_record_batch(
-        schema: Arc<Schema>,
-        fields: &[&str],
-        extracted_data: &HashMap<&str, Vec<String>>,
-    ) -> Result<RecordBatch, datafusion::arrow::error::ArrowError> {
-        let arrays: Vec<_> = fields
+    fn validate_events(&self, events: Vec<Value>) -> (HashMap<&str, Vec<String>>, Vec<Value>) {
+        let mut extracted_data: HashMap<&str, Vec<String>> = self
+            .fields
             .iter()
-            .map(|&field| Arc::new(StringArray::from(extracted_data[field].clone())) as _)
+            .map(|field| (field.as_str(), Vec::new()))
             .collect();
 
-        RecordBatch::try_new(schema, arrays)
+        let mut discarded_events: Vec<Value> = Vec::new();
+
+        for event in events {
+            let mut temp_values: HashMap<&str, String> = HashMap::new();
+            let mut valid = true;
+
+            for field in &self.fields {
+                if let Some(value) = event.get(field).and_then(|v| v.as_str()) {
+                    temp_values.insert(field.as_str(), value.to_string());
+                } else {
+                    valid = false;
+                    break; // If any field is missing, discard the event
+                }
+            }
+
+            if valid {
+                // Push all values to extracted_data, ensuring we only push complete events
+                for field in &self.fields {
+                    extracted_data
+                        .get_mut(field.as_str())
+                        .unwrap()
+                        .push(temp_values[field.as_str()].clone());
+                }
+            } else {
+                discarded_events.push(event);
+            }
+        }
+
+        (extracted_data, discarded_events)
     }
 
-    fn schema(fields: &[&str]) -> Arc<Schema> {
-        Arc::new(Schema::new(
-            fields.iter().map(|&field| Field::new(field, DataType::Utf8, false)).collect(),
-        ))
+    fn create_record_batch(
+        &self,
+        extracted_data: &HashMap<&str, Vec<String>>,
+    ) -> Result<RecordBatch, datafusion::arrow::error::ArrowError> {
+        let arrays: Vec<_> = self
+            .fields
+            .iter()
+            .map(|field| Arc::new(StringArray::from(extracted_data[field.as_str()].clone())) as _)
+            .collect();
+
+        RecordBatch::try_new(self.schema.clone(), arrays)
     }
 }
