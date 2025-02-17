@@ -4,7 +4,7 @@ use event_generator::EventGenerator;
 use event_processor::EventProcessor;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
-//use serde_json::json;
+use std::collections::VecDeque;
 
 const MAC_NUMBER: usize = 10000;
 const CHANNEL_SIZE: usize = 100;
@@ -38,18 +38,26 @@ async fn main() {
         }
     });
 
-    let mut i = 0;
-    let mut events = Vec::new();
-    while let Some(event) = rx.recv().await {
-        i += 1;
-        events.push(event);
-        if i >= BATCH_SIZE {
-            event_processor.process(events.clone());
-            let now = chrono::Utc::now();
-            println!("{} {}", now.to_rfc3339(), events.len());
-            events = Vec::new();
-            i = 0;
+    // Process events in a separate task
+    tokio::spawn(async move {
+        loop {
+            let mut events = Vec::new();
+            for _ in 0..BATCH_SIZE {
+                if let Some(event) = rx.recv().await {
+                    events.push(event);
+                } else {
+                    println!("No event");
+                    break;
+                }
+            }
+            if !events.is_empty() {
+                let _ = event_processor.process(events).await;
+            }
         }
+    });
+
+    loop {
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 
     let duration = start.elapsed();

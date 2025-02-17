@@ -29,8 +29,8 @@ impl EventProcessor {
         EventProcessor { fields, schema }
     }
 
-    pub fn process(&mut self, events: Vec<Value>) {
-        let (mut extracted_data, mut discarded_events) = self.validate_events(events);
+    pub async fn process(&mut self, events: Vec<Value>) -> Result<()> {
+        let (extracted_data, discarded_events) = self.validate_events(events);
 
         println!(
             "Processed {} Discarded {}",
@@ -38,19 +38,16 @@ impl EventProcessor {
             discarded_events.len()
         );
 
-        let record_batch = self.create_record_batch(&extracted_data);
+        let record_batch = self.create_record_batch(&extracted_data)?;
 
-        match record_batch {
-            Ok(batch) => {
-                println!("RecordBatch with {} rows", batch.num_rows());
-                let table = MemTable::try_new(self.schema.clone(), vec![vec![batch]]);
-                let ctx = SessionContext::new();
-                //              ctx.register_table("my_table", Arc::new(table));
-                //               let df = ctx.sql("SELECT * FROM my_table");
-                //               df.clone().show();
-            }
-            Err(e) => eprintln!("Failed to create RecordBatch: {}", e),
-        }
+        let table = MemTable::try_new(self.schema.clone(), vec![vec![record_batch]])?;
+        let ctx = SessionContext::new();
+        ctx.register_table("my_table", Arc::new(table))?;
+
+        let df = ctx.sql("SELECT * FROM my_table").await?;
+        df.clone().show().await?;
+
+        Ok(())
     }
 
     fn validate_events(&self, events: Vec<Value>) -> (HashMap<&str, Vec<String>>, Vec<Value>) {
