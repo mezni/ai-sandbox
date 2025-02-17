@@ -53,57 +53,61 @@ impl EventProcessor {
                     .await?;
         df.clone().show().await?;
 
-        let batches = df.collect().await?;
+    let batches = df.collect().await?;
 
-            let mut conn = Connection::open("macs.db").map_err(|e| {
-                DataFusionError::Internal(format!("Error opening database connection: {}", e))
-            })?;
-                    let tx = conn.transaction().map_err(|e| {
-                DataFusionError::Internal(format!("Error getting tx: {}", e))
-            })?;
-
-        // Iterate over each RecordBatch
-        for batch in batches {
-            let mac_address_col = batch
-                .column(0)
-                .as_any()
-                .downcast_ref::<StringArray>()
-                .unwrap();
-            let event_time_col = batch
-                .column(1)
-                .as_any()
-                .downcast_ref::<StringArray>()
-                .unwrap();
+    let mut conn = Connection::open("macs.db").map_err(|e| {
+        DataFusionError::Internal(format!("Error opening database connection: {}", e))
+    })?;
+    let tx = conn.transaction().map_err(|e| {
+        DataFusionError::Internal(format!("Error starting transaction: {}", e))
+    })?;
 
 
-            for i in 0..batch.num_rows() {
-                let mac_address = mac_address_col.value(i);
-                let event_time = event_time_col.value(i);
+    for batch in batches {
+        let mac_address_col = batch
+            .column(0)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .ok_or_else(|| DataFusionError::Internal("Failed to cast mac_address column".to_string()))?;
+        let event_time_col = batch
+            .column(1)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .ok_or_else(|| DataFusionError::Internal("Failed to cast event_time column".to_string()))?;
 
-                let mac_address_id = get_mac_id(mac_address);
-                let vendor_id = get_vendor_id(mac_address);
-                match (mac_address_id, vendor_id) {
-                    (Some(mac_id), Some(vendor)) => {
-                        tx.execute(
-    "INSERT OR REPLACE INTO users (mac_address_id, vendor_id, last_seen) VALUES (?1, ?2, ?3)",
-    params![mac_address_id, vendor_id, event_time],
-).map_err(|e| DataFusionError::Internal(format!("Error executing SQL query: {}", e)))?;
-                    }
-                    (Some(mac_id), None) => {
-                        println!(
-                "Row {}: mac_address={}, event_time={}, mac_address_id={}, Vendor extraction failed",
-                i, mac_address, event_time, mac_id
-            );
-                    }
-                    (None, _) => {
-                        println!("Row {}: Invalid MAC address: {}", i, mac_address);
-                    }
+        for i in 0..batch.num_rows() {
+            let mac_address = mac_address_col.value(i);
+            let event_time = event_time_col.value(i);
+
+            let mac_address_id = get_mac_id(mac_address);
+            let vendor_id = get_vendor_id(mac_address);
+
+            match (mac_address_id, vendor_id) {
+                (Some(mac_id), Some(vendor)) => {
+                    tx.execute(
+                        "INSERT OR REPLACE INTO macs (mac_address_id, mac_address, last_seen, mac_vendor_id) VALUES (?1, ?2, ?3, ?4)",
+                        params![mac_id, mac_address, event_time, vendor],
+                    )
+                    .map_err(|e| {
+                        DataFusionError::Internal(format!("Error executing SQL query: {}", e))
+                    })?;
+                }
+                (Some(mac_id), None) => {
+                    println!(
+                        "Row {}: mac_address={}, event_time={}, mac_address_id={}, Vendor extraction failed",
+                        i, mac_address, event_time, mac_id
+                    );
+                }
+                (None, _) => {
+                    println!("Row {}: Invalid MAC address: {}", i, mac_address);
                 }
             }
         }
-        tx.commit().map_err(|e| {
-                DataFusionError::Internal(format!("Error to commit: {}", e))
-            })?;
+    }
+
+    tx.commit().map_err(|e| {
+        DataFusionError::Internal(format!("Error committing transaction: {}", e))
+    })?;
         Ok(())
     }
 
