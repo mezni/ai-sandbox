@@ -8,6 +8,7 @@ use datafusion::datasource::memory::MemTable;
 use datafusion::error::{DataFusionError, Result};
 use datafusion::execution::context::SessionContext;
 use datafusion::prelude::*;
+use rusqlite::{params, Connection};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -42,11 +43,67 @@ impl EventProcessor {
 
         let table = MemTable::try_new(self.schema.clone(), vec![vec![record_batch]])?;
         let ctx = SessionContext::new();
-        ctx.register_table("my_table", Arc::new(table))?;
+        ctx.register_table("mac_table", Arc::new(table))?;
 
-        let df = ctx.sql("SELECT * FROM my_table").await?;
+        let df = ctx.sql("SELECT * FROM mac_table").await?;
+        //df.clone().show().await?;
+
+        let df = ctx
+                    .sql("SELECT mac_address,max(event_time) as event_time FROM mac_table GROUP BY mac_address")
+                    .await?;
         df.clone().show().await?;
 
+        let batches = df.collect().await?;
+
+            let mut conn = Connection::open("macs.db").map_err(|e| {
+                DataFusionError::Internal(format!("Error opening database connection: {}", e))
+            })?;
+                    let tx = conn.transaction().map_err(|e| {
+                DataFusionError::Internal(format!("Error getting tx: {}", e))
+            })?;
+
+        // Iterate over each RecordBatch
+        for batch in batches {
+            let mac_address_col = batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap();
+            let event_time_col = batch
+                .column(1)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap();
+
+
+            for i in 0..batch.num_rows() {
+                let mac_address = mac_address_col.value(i);
+                let event_time = event_time_col.value(i);
+
+                let mac_address_id = get_mac_id(mac_address);
+                let vendor_id = get_vendor_id(mac_address);
+                match (mac_address_id, vendor_id) {
+                    (Some(mac_id), Some(vendor)) => {
+                        tx.execute(
+    "INSERT OR REPLACE INTO users (mac_address_id, vendor_id, last_seen) VALUES (?1, ?2, ?3)",
+    params![mac_address_id, vendor_id, event_time],
+).map_err(|e| DataFusionError::Internal(format!("Error executing SQL query: {}", e)))?;
+                    }
+                    (Some(mac_id), None) => {
+                        println!(
+                "Row {}: mac_address={}, event_time={}, mac_address_id={}, Vendor extraction failed",
+                i, mac_address, event_time, mac_id
+            );
+                    }
+                    (None, _) => {
+                        println!("Row {}: Invalid MAC address: {}", i, mac_address);
+                    }
+                }
+            }
+        }
+        tx.commit().map_err(|e| {
+                DataFusionError::Internal(format!("Error to commit: {}", e))
+            })?;
         Ok(())
     }
 
@@ -99,5 +156,20 @@ impl EventProcessor {
             .collect();
 
         RecordBatch::try_new(self.schema.clone(), arrays)
+    }
+}
+
+fn get_mac_id(mac: &str) -> Option<u64> {
+    let mac_clean = mac.replace(":", ""); // Remove colons
+    u64::from_str_radix(&mac_clean, 16).ok() // Convert hex string to integer
+}
+
+fn get_vendor_id(mac: &str) -> Option<u64> {
+    let parts: Vec<&str> = mac.split(':').collect();
+    if parts.len() >= 3 {
+        let oui = format!("{}{}{}", parts[0], parts[1], parts[2]); // First 3 octets
+        u64::from_str_radix(&oui, 16).ok() // Convert to integer
+    } else {
+        None
     }
 }
