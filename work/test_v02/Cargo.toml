@@ -1,0 +1,18 @@
+[package]
+name = "test_v02"
+version = "0.1.0"
+edition = "2021"
+authors = ["MEZNI <mamezni@gmail.com>"]
+
+[dependencies]
+actix-rt = "2.10.0"
+actix-web = "4.9.0"
+color-eyre = "0.6.3"
+config = "0.15.8"
+dotenv = "0.15.0"
+eyre = "0.6.12"
+serde = { version = "1.0.217", features = ["derive"] }
+tracing = "0.1.41"
+tracing-futures = "0.2.5"
+tracing-log = { version = "0.2.0" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
