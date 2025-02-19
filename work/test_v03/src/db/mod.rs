@@ -1,8 +1,22 @@
 use crate::models::MacVendor;
-use r2d2::PooledConnection;
+use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Error as RusqliteError;
+use rusqlite::Result;
+use std::fs;
 use std::io;
+type DbPool = Pool<SqliteConnectionManager>;
+
+pub fn initialize_database(pool: &DbPool) -> Result<()> {
+    let conn = pool.get().expect("Failed to get DB connection");
+
+    let sql_script = fs::read_to_string("database.sql").expect("Failed to read database.sql");
+
+    conn.execute_batch(&sql_script)?;
+
+    println!("Database initialized successfully.");
+    Ok(())
+}
 
 pub fn get_mac_vendors(
     conn: &PooledConnection<SqliteConnectionManager>,

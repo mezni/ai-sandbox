@@ -10,21 +10,8 @@ mod db;
 mod handlers;
 mod models;
 
-use crate::handlers::fetch_mac_vendors;
-use crate::handlers::*;
-
-type DbPool = Pool<SqliteConnectionManager>;
-
-fn initialize_database(pool: &DbPool) -> Result<()> {
-    let conn = pool.get().expect("Failed to get DB connection");
-
-    let sql_script = fs::read_to_string("database.sql").expect("Failed to read database.sql");
-
-    conn.execute_batch(&sql_script)?;
-
-    println!("Database initialized successfully.");
-    Ok(())
-}
+use crate::db::initialize_database;
+use crate::handlers::{fetch_mac_vendors, status};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
