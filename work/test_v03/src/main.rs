@@ -10,7 +10,7 @@ mod db;
 mod handlers;
 mod models;
 
-use crate::db::get_mac_vendors;
+use crate::handlers::fetch_mac_vendors;
 use crate::handlers::*;
 
 type DbPool = Pool<SqliteConnectionManager>;
@@ -41,24 +41,11 @@ async fn main() -> std::io::Result<()> {
 
     let config = crate::config::Config::from_env().expect("Failed to load config from environment");
 
-    // Get a connection from the pool
-    match pool.get() {
-        Ok(conn) => match get_mac_vendors(&conn) {
-            Ok(vendors) => {
-                println!("{}", vendors.len());
-                for vendor in vendors {
-                    println!("{:?}", vendor);
-                }
-            }
-            Err(e) => eprintln!("Failed to fetch mac vendors: {}", e),
-        },
-        Err(e) => eprintln!("Failed to get a database connection: {}", e),
-    }
-
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .route("/", web::get().to(status))
+            .route("/vendors", web::get().to(fetch_mac_vendors))
     })
     .bind(format!("{}:{}", config.host, config.port))?
     .run()
