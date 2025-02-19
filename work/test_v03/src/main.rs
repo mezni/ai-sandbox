@@ -10,7 +10,7 @@ mod handlers;
 mod models;
 
 use crate::db::{get_pool, initialize_database};
-use crate::handlers::{fetch_mac_vendors, status};
+use crate::handlers::{fetch_mac_vendor, fetch_mac_vendors, status};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -30,6 +30,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .route("/", web::get().to(status))
             .route("/vendors", web::get().to(fetch_mac_vendors))
+            .route("/vendors/{id}", web::get().to(fetch_mac_vendor))
     })
     .bind(format!("{}:{}", config.host, config.port))?
     .run()
