@@ -1,7 +1,6 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
-use r2d2::{Pool, PooledConnection};
-use r2d2_sqlite::SqliteConnectionManager;
+
 use rusqlite::Result;
 use std::fs;
 
@@ -10,16 +9,14 @@ mod db;
 mod handlers;
 mod models;
 
-use crate::db::initialize_database;
+use crate::db::{get_pool, initialize_database};
 use crate::handlers::{fetch_mac_vendors, status};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    // Create a connection pool
-    let manager = SqliteConnectionManager::file("my_database.db");
-    let pool = Pool::new(manager).expect("Failed to create database pool");
+    let pool = get_pool();
 
     if let Err(e) = initialize_database(&pool) {
         eprintln!("Database initialization failed: {}", e);

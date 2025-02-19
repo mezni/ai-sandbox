@@ -18,6 +18,12 @@ pub fn initialize_database(pool: &DbPool) -> Result<()> {
     Ok(())
 }
 
+pub fn get_pool() -> Pool<SqliteConnectionManager> {
+    // Create a connection pool
+    let manager = SqliteConnectionManager::file("my_database.db");
+    Pool::new(manager).expect("Failed to create database pool")
+}
+
 pub fn get_mac_vendors(
     conn: &PooledConnection<SqliteConnectionManager>,
 ) -> std::result::Result<Vec<MacVendor>, io::Error> {
