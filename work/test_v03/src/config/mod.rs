@@ -11,9 +11,7 @@ impl Config {
     pub fn from_env() -> Result<Self, ConfigError> {
         let builder = ConfigBuilder::builder();
 
-        let config = builder
-            .add_source(Environment::default())
-            .build()?;
+        let config = builder.add_source(Environment::default()).build()?;
 
         config.try_deserialize()
     }
