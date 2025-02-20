@@ -1,11 +1,11 @@
 use serde_json::Value;
 use sled::Db;
-use std::{sync::Arc, convert::TryInto};
+use std::{convert::TryInto, sync::Arc};
 use tokio::sync::Mutex;
 
 pub struct Queue {
-    db: Arc<Db>, 
-    next_key: Mutex<u64>, 
+    db: Arc<Db>,
+    next_key: Mutex<u64>,
 }
 
 impl Queue {
@@ -27,7 +27,7 @@ impl Queue {
         let json_data = serde_json::to_vec(json_value)
             .map_err(|e| sled::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
-        let mut next_key = self.next_key.lock().await; 
+        let mut next_key = self.next_key.lock().await;
         let key = next_key.to_be_bytes();
 
         self.db.insert(key, json_data)?;

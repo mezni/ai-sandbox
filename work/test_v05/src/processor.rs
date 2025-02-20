@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 const BATCH_SIZE: usize = 5000;
 
 pub struct EventProcessor {
-    batch: VecDeque<Value>, 
+    batch: VecDeque<Value>,
 }
 
 impl EventProcessor {
