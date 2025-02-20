@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json;
+use serde_json::{from_slice, json, Value};
 use sled::Db;
 use std::str;
 
@@ -20,22 +20,27 @@ impl Queue {
         Ok(Self { db, next_key })
     }
 
-    pub fn push_json<T: Serialize>(&mut self, value: &T) -> sled::Result<()> {
-        let json_data = serde_json::to_vec(value).unwrap();
+    pub fn push(&mut self, json_value: &Value) -> sled::Result<()> {
+        // Handle potential serialization error explicitly
+        let json_data = serde_json::to_vec(json_value)
+            .map_err(|e| sled::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         let key = self.next_key.to_be_bytes();
-        self.db.insert(key, json_data)?;
+        self.db.insert(key, json_data)?; // Insert the serialized JSON data
         self.next_key += 1;
         Ok(())
     }
 
-    pub fn pop_json<T: for<'de> Deserialize<'de>>(&self) -> sled::Result<Option<T>> {
+    pub fn pop(&self) -> sled::Result<Option<Value>> {
         if let Some((key, value)) = self.db.first()? {
-            self.db.remove(&key)?;
-            let json_str = str::from_utf8(&value).unwrap();
-            let obj: T = serde_json::from_str(json_str).unwrap();
-            Ok(Some(obj))
+            self.db.remove(&key)?; // Remove the key-value pair from the database
+
+            // Deserialize the value into a serde_json::Value
+            let json_value: Value = serde_json::from_slice(&value)
+                .map_err(|e| sled::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+
+            Ok(Some(json_value)) // Return the JSON Value wrapped in Some
         } else {
-            Ok(None)
+            Ok(None) // Return None if the queue is empty
         }
     }
 }
