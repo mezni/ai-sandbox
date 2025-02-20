@@ -21,26 +21,24 @@ impl Queue {
     }
 
     pub fn push(&mut self, json_value: &Value) -> sled::Result<()> {
-        // Handle potential serialization error explicitly
         let json_data = serde_json::to_vec(json_value)
             .map_err(|e| sled::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         let key = self.next_key.to_be_bytes();
-        self.db.insert(key, json_data)?; // Insert the serialized JSON data
+        self.db.insert(key, json_data)?;
         self.next_key += 1;
         Ok(())
     }
 
     pub fn pop(&self) -> sled::Result<Option<Value>> {
         if let Some((key, value)) = self.db.first()? {
-            self.db.remove(&key)?; // Remove the key-value pair from the database
+            self.db.remove(&key)?;
 
-            // Deserialize the value into a serde_json::Value
             let json_value: Value = serde_json::from_slice(&value)
                 .map_err(|e| sled::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
-            Ok(Some(json_value)) // Return the JSON Value wrapped in Some
+            Ok(Some(json_value))
         } else {
-            Ok(None) // Return None if the queue is empty
+            Ok(None)
         }
     }
 }
