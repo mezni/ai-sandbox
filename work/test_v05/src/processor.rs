@@ -1,12 +1,31 @@
 use serde_json::Value;
-pub struct EventProcessor {}
+use std::collections::VecDeque;
+
+const BATCH_SIZE: usize = 1000;
+
+pub struct EventProcessor {
+    batch: VecDeque<Value>, 
+}
 
 impl EventProcessor {
     pub fn new() -> Self {
-        EventProcessor {}
+        EventProcessor {
+            batch: VecDeque::new(),
+        }
     }
-    pub async fn process(&mut self, events: Vec<Value>) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Processing {} events", events.len());
+
+    pub async fn process(&mut self, event: Value) -> Result<(), Box<dyn std::error::Error>> {
+        // Add the event to the batch
+        self.batch.push_back(event.clone());
+
+        // Process batch when it reaches BATCH_SIZE
+        if self.batch.len() >= BATCH_SIZE {
+            println!("Processing batch of size: {}", self.batch.len());
+
+            // Here, you can send to a database, API, or process them further
+            self.batch.clear(); // Clear the batch after processing
+        }
+
         Ok(())
     }
 }

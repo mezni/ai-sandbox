@@ -9,8 +9,7 @@ use queue::Queue;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
-const BATCH_SIZE: usize = 5000;
-const MAC_COUNT: usize = 1000;
+const MAC_COUNT: usize = 10000;
 const MAC_INV_COUNT: usize = 5;
 
 #[tokio::main]
@@ -36,28 +35,20 @@ async fn main() -> sled::Result<()> {
 
     tokio::spawn(async move {
         loop {
-            let mut batch = Vec::new();
+            let queue = consumer_queue.lock().await;
 
-            while batch.len() < BATCH_SIZE {
-                let queue = consumer_queue.lock().await;
-
-                if let Ok(Some(popped_event)) = queue.pop() {
-                    batch.push(popped_event);
-                } else {
-                    // Queue is empty, wait a bit before retrying to avoid busy-waiting
-                    drop(queue); // Explicitly drop Mutex lock before sleeping
-                    tokio::time::sleep(Duration::from_millis(10)).await;
+            if let Ok(Some(popped_event)) = queue.pop() {
+                if let Err(e) = event_processor.process(popped_event).await {
+                    eprintln!("Error processing event: {}", e);
                 }
-            }
-
-            // Process the batch after collecting BATCH_SIZE events
-            if let Err(e) = event_processor.process(batch).await {
-                eprintln!("Error processing events: {}", e);
+            } else {
+                // No event available, avoid busy-waiting
+                tokio::time::sleep(Duration::from_millis(100)).await;
             }
         }
     });
 
     loop {
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }

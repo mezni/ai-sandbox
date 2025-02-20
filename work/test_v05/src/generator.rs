@@ -9,7 +9,7 @@ use std::net::Ipv4Addr;
 const MIN_PORT: u16 = 1024;
 const MAX_PORT: u16 = 32000;
 const START_TIME_INTERVAL_MINUTES: u8 = 2;
-const BUFFER_SIZE: usize = 5000;
+const BUFFER_SIZE: usize = 10000;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Event {
