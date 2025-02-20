@@ -116,7 +116,8 @@ impl EventGenerator {
         }
     }
 
-    fn fill_buffer(&mut self) {
+
+     fn fill_buffer(&mut self) {
         let mut rng = rand::rng();
         while self.buffer.len() < BUFFER_SIZE {
             let random_selection_number = self.mac_addresses.len() / 4;
@@ -131,6 +132,7 @@ impl EventGenerator {
             self.buffer.push((event_close.event_time, event_close));
         }
     }
+
 }
 
 impl Iterator for EventGenerator {

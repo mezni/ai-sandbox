@@ -1,7 +1,7 @@
 use serde_json::Value;
 use std::collections::VecDeque;
 
-const BATCH_SIZE: usize = 1000;
+const BATCH_SIZE: usize = 5000;
 
 pub struct EventProcessor {
     batch: VecDeque<Value>, 
