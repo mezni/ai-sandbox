@@ -1,5 +1,4 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{from_slice, json, Value};
+use serde_json::Value;
 use sled::Db;
 use std::str;
 
