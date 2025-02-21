@@ -1,7 +1,7 @@
 // src/error.rs
-use sled::Error as SledError;
-use rusqlite::Error as RusqliteError;
 use r2d2::Error as R2D2Error;
+use rusqlite::Error as RusqliteError;
+use sled::Error as SledError;
 use std::io::Error as IoError;
 
 #[derive(Debug)]
