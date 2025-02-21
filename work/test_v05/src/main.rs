@@ -15,10 +15,19 @@ const MAC_INV_COUNT: usize = 5;
 #[tokio::main]
 async fn main() -> sled::Result<()> {
     println!("Start");
+    let fields = vec![
+        "mac_address".to_string(),
+        "event_time".to_string(),
+        "ip_address_src".to_string(),
+        "port_src".to_string(),
+        "ip_address_dst".to_string(),
+        "port_dst".to_string(),
+        "event_type".to_string(),
+    ];
 
     let queue = Arc::new(Queue::new("queue_db")?);
     let event_generator = EventGenerator::new(MAC_COUNT, MAC_INV_COUNT).await;
-    let event_processor = Arc::new(Mutex::new(EventProcessor::new()));
+    let event_processor = Arc::new(Mutex::new(EventProcessor::new(fields)));
 
     // Producer Task
     let producer_queue = Arc::clone(&queue);

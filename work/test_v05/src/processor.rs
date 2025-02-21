@@ -1,16 +1,38 @@
-use serde_json::Value;
-use std::collections::VecDeque;
-use std::error::Error;
+use datafusion::arrow::{
+    array::{Float64Array, StringArray},
+    datatypes::{DataType, Field, Schema},
+    record_batch::RecordBatch,
+};
+use datafusion::dataframe::DataFrameWriteOptions;
+use datafusion::datasource::memory::MemTable;
+use datafusion::error::{DataFusionError, Result};
+use datafusion::execution::context::SessionContext;
+use datafusion::prelude::*;
 
-const BATCH_SIZE: usize = 5000;
+use serde_json::Value;
+use std::collections::{HashMap, VecDeque};
+use std::error::Error;
+use std::sync::Arc;
+
+const BATCH_SIZE: usize = 100;
 
 pub struct EventProcessor {
+    fields: Vec<String>,
+    schema: Arc<Schema>,
     batch: VecDeque<Value>,
 }
 
 impl EventProcessor {
-    pub fn new() -> Self {
+    pub fn new(fields: Vec<String>) -> Self {
+        let schema = Arc::new(Schema::new(
+            fields
+                .iter()
+                .map(|field| Field::new(field.as_str(), DataType::Utf8, false))
+                .collect::<Vec<_>>(),
+        ));
         EventProcessor {
+            fields: fields,
+            schema: schema,
             batch: VecDeque::new(),
         }
     }
@@ -28,16 +50,79 @@ impl EventProcessor {
         Ok(())
     }
 
-    pub async fn process_batch(&self, batch: Vec<Value>) -> Result<(), Box<dyn Error>> {
-        println!("Processing batch of size: {}", batch.len());
-        // Here, you can send to a database, API, or process them further
+    pub async fn process_batch(&self, events: Vec<Value>) -> Result<(), Box<dyn Error>> {
+        println!("Processing batch of size: {}", events.len());
 
-        // Example processing logic
-        for event in batch {
-            // Simulate processing each event
-            println!("Processed event: {:?}", event);
+        let (extracted_data, discarded_events) = self.validate_events(events);
+
+        println!(
+            "Processed {} Discarded {}",
+            extracted_data["mac_address"].len(),
+            discarded_events.len()
+        );
+
+        let record_batch = self.create_record_batch(&extracted_data)?;
+        let table = MemTable::try_new(self.schema.clone(), vec![vec![record_batch]])?;
+        let ctx = SessionContext::new();
+        ctx.register_table("mac_table", Arc::new(table))?;
+
+        let df = ctx.sql("SELECT * FROM mac_table").await?;
+        //df.clone().show().await?;
+
+        let df = ctx
+                    .sql("SELECT mac_address,max(event_time) as event_time FROM mac_table GROUP BY mac_address")
+                    .await?;
+        df.clone().show().await?;
+        Ok(())
+    }
+
+    fn validate_events(&self, events: Vec<Value>) -> (HashMap<&str, Vec<String>>, Vec<Value>) {
+        let mut extracted_data: HashMap<&str, Vec<String>> = self
+            .fields
+            .iter()
+            .map(|field| (field.as_str(), Vec::new()))
+            .collect();
+
+        let mut discarded_events: Vec<Value> = Vec::new();
+
+        for event in events {
+            let mut temp_values: HashMap<&str, String> = HashMap::new();
+            let mut valid = true;
+
+            for field in &self.fields {
+                if let Some(value) = event.get(field).and_then(|v| v.as_str()) {
+                    temp_values.insert(field.as_str(), value.to_string());
+                } else {
+                    valid = false;
+                    break; // If any field is missing, discard the event
+                }
+            }
+
+            if valid {
+                // Push all values to extracted_data, ensuring we only push complete events
+                for field in &self.fields {
+                    extracted_data
+                        .get_mut(field.as_str())
+                        .unwrap()
+                        .push(temp_values[field.as_str()].clone());
+                }
+            } else {
+                discarded_events.push(event);
+            }
         }
 
-        Ok(())
+        (extracted_data, discarded_events)
+    }
+    fn create_record_batch(
+        &self,
+        extracted_data: &HashMap<&str, Vec<String>>,
+    ) -> Result<RecordBatch, datafusion::arrow::error::ArrowError> {
+        let arrays: Vec<_> = self
+            .fields
+            .iter()
+            .map(|field| Arc::new(StringArray::from(extracted_data[field.as_str()].clone())) as _)
+            .collect();
+
+        RecordBatch::try_new(self.schema.clone(), arrays)
     }
 }
