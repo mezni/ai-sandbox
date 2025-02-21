@@ -66,13 +66,42 @@ impl EventProcessor {
         let ctx = SessionContext::new();
         ctx.register_table("mac_table", Arc::new(table))?;
 
+        self.execute_query(ctx).await?;
+
+        Ok(())
+    }
+
+    async fn execute_query(&self, mut ctx: SessionContext) -> Result<(), Box<dyn Error>> {
         let df = ctx.sql("SELECT * FROM mac_table").await?;
-        //df.clone().show().await?;
 
         let df = ctx
-                    .sql("SELECT mac_address,max(event_time) as event_time FROM mac_table GROUP BY mac_address")
-                    .await?;
+            .sql("SELECT mac_address,max(event_time) as event_time FROM mac_table GROUP BY mac_address")
+            .await?;
         df.clone().show().await?;
+        let batches = df.collect().await?;
+        for batch in batches {
+            let mac_address_col = batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .ok_or_else(|| {
+                    DataFusionError::Internal("Failed to cast mac_address column".to_string())
+                })?;
+            let event_time_col = batch
+                .column(1)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .ok_or_else(|| {
+                    DataFusionError::Internal("Failed to cast event_time column".to_string())
+                })?;
+
+            for i in 0..batch.num_rows() {
+                let mac_address = mac_address_col.value(i);
+                let event_time = event_time_col.value(i);
+
+                println!("MAC {} Time {}", mac_address, event_time);
+            }
+        }
         Ok(())
     }
 
