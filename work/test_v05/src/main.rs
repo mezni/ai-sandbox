@@ -1,4 +1,9 @@
 // src/main.rs
+
+use r2d2::{Pool, PooledConnection};
+use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::{Connection, Error as RusqliteError};
+
 mod database;
 mod error;
 mod generator;
@@ -21,9 +26,9 @@ const MAC_INV_COUNT: usize = 5;
 async fn main() -> Result<(), AppError> {
     println!("Start");
 
-    let pool = get_pool("macs.db")?;
+    let conn = get_pool("macs.db")?;
 
-    initialize_database(&pool)?;
+    initialize_database(&conn)?;
 
     let fields = vec![
         "mac_address".to_string(),
@@ -73,5 +78,21 @@ async fn main() -> Result<(), AppError> {
 
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
+        let count = get_macs_count(&conn)?;
+        println!("Macs count: {}", count);
+    }
+}
+
+fn get_macs_count(pool: &Pool<SqliteConnectionManager>) -> Result<i64, rusqlite::Error> {
+    let conn = pool.get().map_err(|e| {
+        rusqlite::Error::ToSqlConversionFailure(Box::new(e))
+    })?;
+    let mut stmt = conn.prepare("SELECT COUNT(*) FROM mac_addresses")?;
+    let mut rows = stmt.query([])?;
+    if let Some(row) = rows.next()? {
+        let count: i64 = row.get(0)?;
+        Ok(count)
+    } else {
+        Ok(0)
     }
 }

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS mac_vendors (
     id INTEGER PRIMARY KEY ,
     designation TEXT NOT NULL,
-    org_name TEXT NOT NULL
+    org_name TEXT
 );
 
 CREATE TABLE IF NOT EXISTS mac_addresses (

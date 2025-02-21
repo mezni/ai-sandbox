@@ -1,3 +1,9 @@
+use crate::database::*;
+
+use r2d2::{Pool, PooledConnection};
+use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::{params, Connection};
+
 use datafusion::arrow::{
     array::{Float64Array, StringArray},
     datatypes::{DataType, Field, Schema},
@@ -13,7 +19,6 @@ use serde_json::Value;
 use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::sync::Arc;
-
 const BATCH_SIZE: usize = 100;
 
 pub struct EventProcessor {
@@ -71,13 +76,13 @@ impl EventProcessor {
         Ok(())
     }
 
-    async fn execute_query(&self, mut ctx: SessionContext) -> Result<(), Box<dyn Error>> {
+    async fn execute_query(&self,  ctx: SessionContext) -> Result<(), Box<dyn Error>> {
         let df = ctx.sql("SELECT * FROM mac_table").await?;
 
         let df = ctx
             .sql("SELECT mac_address,max(event_time) as event_time FROM mac_table GROUP BY mac_address")
             .await?;
-        df.clone().show().await?;
+        // df.clone().show().await?;
         let batches = df.collect().await?;
         for batch in batches {
             let mac_address_col = batch
@@ -95,12 +100,31 @@ impl EventProcessor {
                     DataFusionError::Internal("Failed to cast event_time column".to_string())
                 })?;
 
+            let mut conn = get_pool("macs.db")?.get()?;
+            let tx = conn.transaction()?;
+            let vendor_stmt_text =
+                "INSERT OR REPLACE INTO mac_vendors (id, designation) VALUES (?, ?)";
+            let mut vendor_stmt = tx.prepare(vendor_stmt_text)?;
+
+            let mac_stmt_text =
+                "INSERT OR REPLACE INTO mac_addresses  (id, mac_address , mac_vendor_id ) VALUES (?, ?, ?)";
+            let mut mac_stmt = tx.prepare(mac_stmt_text)?;
+
             for i in 0..batch.num_rows() {
                 let mac_address = mac_address_col.value(i);
                 let event_time = event_time_col.value(i);
-
-                println!("MAC {} Time {}", mac_address, event_time);
+                let mac_address_id = get_mac_id(mac_address);
+                if let Some((vendor_id, vendor_design)) = get_vendor_info(mac_address) {
+                    vendor_stmt.execute(params![vendor_id, vendor_design])?;
+                    mac_stmt.execute(params![mac_address_id, mac_address, vendor_id])?;
+                    // println!("MAC {} Time {}", mac_address, event_time);
+                } else {
+                    println!("No vendor info found for MAC {}", mac_address);
+                }
             }
+            drop(vendor_stmt);
+            drop(mac_stmt);
+            tx.commit()?;
         }
         Ok(())
     }
@@ -153,5 +177,22 @@ impl EventProcessor {
             .collect();
 
         RecordBatch::try_new(self.schema.clone(), arrays)
+    }
+}
+
+fn get_mac_id(mac: &str) -> Option<u64> {
+    let mac_clean = mac.replace(":", "");
+    u64::from_str_radix(&mac_clean, 16).ok()
+}
+
+fn get_vendor_info(mac: &str) -> Option<(u64, String)> {
+    let parts: Vec<&str> = mac.split(':').collect();
+    if parts.len() >= 3 {
+        let oui = format!("{}{}{}", parts[0], parts[1], parts[2]);
+        u64::from_str_radix(&oui, 16)
+            .ok()
+            .map(|vendor_id| (vendor_id, oui))
+    } else {
+        None
     }
 }
