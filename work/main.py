@@ -1,20 +1,31 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 
-class FileReader:
-    def __init__(self, file_type, file_path):
-        self.file_type = file_type  
-        self.file_path = file_path    
+class Source(ABC):
+    @abstractmethod
+    def extract(self):
+        pass
+
+class FileSource(Source):
+    def __init__(self, file_path):
+        self.file_path = file_path
 
     def extract(self):
-        if self.file_type not in ["roam_in", "roam_out"]:  
-            return None, "Error: Unsupported file type."
+        return pd.read_csv(self.file_path), None
 
-# Example usage
+
+
+class ETLPipeline:
+    def __init__(self, source: Source):
+        self.source = source
+
+
+    def run(self):
+        extracted_data, error = self.source.extract()
+
 file_path = '../../DATA/data.csv'
-reader = FileReader("roam_in", file_path)
-data, error = reader.extract()
+source = FileSource(file_path)
 
-if error:
-    print(error)
-else:
-    print(data.head())  # Print first few rows
+
+pipeline = ETLPipeline(source)
+pipeline.run()
