@@ -1,6 +1,3 @@
-country, alpha2, alpha3, country_num, country_code
-
-
 CREATE TABLE IF NOT EXISTS dim_countries (
     id SERIAL PRIMARY KEY,
     country VARCHAR(100) NOT NULL,
