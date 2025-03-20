@@ -1,7 +1,7 @@
+use csv::ReaderBuilder;
 use std::error::Error;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use csv::ReaderBuilder;
 
 #[derive(Debug)]
 struct Record {

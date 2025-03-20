@@ -34,7 +34,8 @@ impl BatchRepository {
     }
 
     pub async fn update_batch(&self, batch_id: i32, status: &str) -> Result<u64, AppError> {
-        let rows_affected = self.client
+        let rows_affected = self
+            .client
             .execute(
                 "UPDATE batch_execs SET batch_status = $1 WHERE id = $2",
                 &[&status, &batch_id],

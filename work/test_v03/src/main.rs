@@ -8,7 +8,7 @@ fn main() {
 
     if let Some(captures) = re.captures(filename) {
         let timestamp = &captures[1]; // Extract the first capture group
-        let date = &timestamp[0..8];  // First 8 characters as date (YYYYMMDD)
+        let date = &timestamp[0..8]; // First 8 characters as date (YYYYMMDD)
 
         println!("Full Timestamp: {}", timestamp);
         println!("Date (YYYYMMDD): {}", date);

@@ -1,11 +1,11 @@
-use std::{fs, path::Path};
 use std::collections::HashMap;
-use tokio::{time::Duration, fs::File};
-use tokio_postgres::{NoTls, Error};
+use std::{fs, path::Path};
+use tokio::{fs::File, time::Duration};
+use tokio_postgres::{Error, NoTls};
 //use csv::ReaderBuilder;
 //use serde::Deserialize;
-use log::{info, error};
 use env_logger;
+use log::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
