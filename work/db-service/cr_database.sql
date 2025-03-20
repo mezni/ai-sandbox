@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS dim_carriers (
     carrier_name VARCHAR(100) NOT NULL,
     country_name VARCHAR(100) NOT NULL,
     country_code VARCHAR(10) NOT NULL,
-    national_destination_code VARCHAR(10),
-    country_id INT NOT NULL,    
-    FOREIGN KEY (country_id) REFERENCES dim_countries(id)
+    national_destination_code VARCHAR(10)
+--    country_id INT NOT NULL,    
+--    FOREIGN KEY (country_id) REFERENCES dim_countries(id)
 );
 
 CREATE TABLE IF NOT EXISTS mnr_batchs (

@@ -50,13 +50,13 @@ SELECT carrier_id , carrier_name , country_name , country_code , national_destin
 
 
 
+
 WITH CTE AS (
 select id, carrier_id , carrier_name , country_name , country_code , national_destination_code, country_code || national_destination_code as code,
 ROW_NUMBER() OVER (PARTITION BY country_code || national_destination_code ORDER BY id DESC) AS rn
 from dim_carriers
---where country_code = '216'
 where national_destination_code is not null
 )
-SELECT carrier_id , carrier_name , country_name , country_code , national_destination_code,  code
+SELECT country_name , carrier_id , carrier_name ,  country_code , national_destination_code,  code
 FROM CTE WHERE rn = 1
-ORDER by carrier_id
+ORDER by country_name,carrier_id
