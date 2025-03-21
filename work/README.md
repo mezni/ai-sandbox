@@ -37,17 +37,16 @@ order by carrier_id,id)
 group by code_number;
 
 
-
+select * from (
 WITH CTE AS (
 select id, carrier_id , carrier_name , country_name , country_code , national_destination_code, country_code || national_destination_code as code,
 ROW_NUMBER() OVER (PARTITION BY country_code || national_destination_code ORDER BY id DESC) AS rn
 from dim_carriers
-where country_code = '216'
-and national_destination_code is not null
+where national_destination_code is not null
 )
 SELECT carrier_id , carrier_name , country_name , country_code , national_destination_code,  code
  FROM CTE WHERE rn = 1
-
+) where country_code = '33' and code='331'
 
 
 
@@ -60,3 +59,9 @@ where national_destination_code is not null
 SELECT country_name , carrier_id , carrier_name ,  country_code , national_destination_code,  code
 FROM CTE WHERE rn = 1
 ORDER by country_name,carrier_id
+
+
+
+UPDATE dim_carriers
+SET national_destination_code = SUBSTRING(national_destination_code FROM 2)
+WHERE national_destination_code like '0%';
