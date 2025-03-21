@@ -3,7 +3,7 @@ use crate::repository::Repository;
 
 use std::collections::HashMap;
 
-async fn get_lookup(
+pub async fn get_lookup(
     repository: &Repository,
 ) -> Result<HashMap<String, (String, String, String, String, String)>, AppError> {
     let mut carrier_map: HashMap<String, (String, String, String, String, String)> = HashMap::new();
