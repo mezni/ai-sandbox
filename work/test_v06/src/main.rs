@@ -5,7 +5,7 @@ mod repository;
 mod utils;
 use errors::AppError;
 use crate::repository::Repository;
-use crate::utils::get_lookup;
+use crate::utils::CarrierLookup;
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
@@ -15,28 +15,17 @@ async fn main() -> Result<(), AppError> {
 
     let repository = Repository::new().await?;
     log::info!("Connected to the database.");
-    let carrier_map = get_lookup(&repository).await?; 
+//    let carrier_map = get_lookup(&repository).await?; 
 //    println!("{:?}", carrier_map);
+let carrier_lookup = CarrierLookup::new().await?;
+let carrier_record = carrier_lookup.lookup("331067003566".to_string());
 
-
-    let mut s = String::from("331067003566");
-    loop {
-        if carrier_map.contains_key(s.as_str()) {
-            println!("Match found: {}", s);
-            break;
-        } else if s.len() == 0 {
-            println!("No match found");
-            break;
-        } else {
-            s.pop();
-        }
-    }
+println!("Carrier name: {}", carrier_record.carrier_name);
+println!("Country name: {}", carrier_record.country_name);
 
 
     Ok(())
 }
-
-
 
 
 
