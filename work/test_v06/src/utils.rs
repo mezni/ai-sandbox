@@ -8,13 +8,14 @@ pub struct CarrierLookup {
 }
 
 pub struct CarrierRecord {
-    carrier_name: String,
-    country_name: String,
+    pub carrier_name: String,
+    pub country_name: String,
 }
 
 impl CarrierLookup {
-    pub async fn new() -> Result<Self, AppError> {
-        let mut carrier_map: HashMap<String, (String, String, String, String, String)> = HashMap::new();
+    pub async fn new(repository: &Repository) -> Result<Self, AppError> {
+        let mut carrier_map: HashMap<String, (String, String, String, String, String)> =
+            HashMap::new();
         let carriers = repository.select_carriers().await?;
         for row in carriers {
             let country_name: String = row.get("country_name");
@@ -28,22 +29,22 @@ impl CarrierLookup {
                 (carrier_name, carrier_id, country_name, country_code, ndc),
             );
         }
-    
+
         Ok(CarrierLookup { carrier_map })
     }
 
     pub fn lookup(&self, mut s: String) -> CarrierRecord {
         loop {
             if let Some(carrier_info) = self.carrier_map.get(s.as_str()) {
-                return CarrierRecord{
+                return CarrierRecord {
                     carrier_name: carrier_info.0.clone(),
                     country_name: carrier_info.2.clone(),
-                }
+                };
             } else if s.len() == 0 {
-                return CarrierRecord{
+                return CarrierRecord {
                     carrier_name: "".to_string(),
                     country_name: "".to_string(),
-                }
+                };
             } else {
                 s.pop();
             }
