@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS batch_execs (
 );
 
 
-CREATE TABLE IF NOT EXISTS stg_roum_out (
+CREATE TABLE IF NOT EXISTS stg_roam_out (
     batch_id INT NOT NULL,    
     imsi VARCHAR(100) NOT NULL,
     msisdn VARCHAR(100) NOT NULL,
