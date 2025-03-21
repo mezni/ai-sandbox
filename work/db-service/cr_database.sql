@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS dim_carriers (
 --    FOREIGN KEY (country_id) REFERENCES dim_countries(id)
 );
 
-CREATE TABLE IF NOT EXISTS mnr_batchs (
+CREATE TABLE IF NOT EXISTS batch_execs (
     id SERIAL PRIMARY KEY,
     batch_name VARCHAR(100) NOT NULL,
     start_time TIMESTAMP,
