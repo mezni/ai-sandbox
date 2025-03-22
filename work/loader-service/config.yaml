@@ -1,0 +1,14 @@
+sleep_duration_seconds: 60
+
+sources:
+  - source_type: roam_out
+    source_directory: /tmp
+    file_pattern: ^HSS\d{4}_\d{4}_\d{14}\.txt$
+    post_action: archive
+    archive_directory: /tmp
+
+  - source_type: roam_in
+    source_directory: /tmp
+    file_pattern: ^HSS\d{4}_\d{4}_\d{14}\.txt$
+    post_action: delete
+
