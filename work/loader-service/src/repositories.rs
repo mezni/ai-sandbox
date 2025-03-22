@@ -1,14 +1,16 @@
 use crate::AppError;
-use tokio_postgres::{Client, Row};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio_postgres::Client;
 
-pub struct BatchRepository<'a> {
-    pub client: &'a mut Client,
+pub struct BatchRepository {
+    pub client: Arc<Mutex<Client>>,
 }
 
-impl<'a> BatchRepository<'a> {
-    // Insert a new batch and return the batch ID
-    pub async fn insert_batch(&mut self, batch_name: &str) -> Result<i32, AppError> {
-        let row: Row = self.client
+impl BatchRepository {
+    pub async fn insert_batch(&self, batch_name: &str) -> Result<i32, AppError> {
+        let client = self.client.lock().await;
+        let row = client
             .query_one(
                 "INSERT INTO batch_execs (batch_name, start_time, batch_status) VALUES ($1, NOW(), 'Started') RETURNING id",
                 &[&batch_name],
@@ -18,12 +20,11 @@ impl<'a> BatchRepository<'a> {
         Ok(row.get("id"))
     }
 
-    // Update batch status and set end_time using the batch ID
-    pub async fn update_batch(&mut self, batch_id: i32, status: &str) -> Result<u64, AppError> {
-        let rows_affected = self
-            .client
+    pub async fn update_batch(&self, batch_id: i32, status: &str) -> Result<u64, AppError> {
+        let mut client = self.client.lock().await;
+        let rows_affected = client
             .execute(
-                "UPDATE batch_execs SET batch_status = $1, end_time = NOW() WHERE id = $2",
+                "UPDATE batch_execs SET batch_status = $1, end_time=NOW() WHERE id = $2",
                 &[&status, &batch_id],
             )
             .await?;
