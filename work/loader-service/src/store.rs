@@ -4,6 +4,17 @@ use log::{error, info};
 use std::env;
 use tokio_postgres::{Client, NoTls, Row};
 
+#[derive(Debug)]
+pub struct RoamOutDBRecord {
+    pub batch_id: i32,
+    pub batch_date: String,
+    pub imsi: String,
+    pub msisdn: String,
+    pub vlr_number: String,
+    pub carrier_name: String,
+    pub country_name: String,
+}
+
 pub async fn connection() -> Result<Client, AppError> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL")
@@ -81,10 +92,7 @@ pub async fn update_batch_execs(
             )))
         }
     }
-
 }
-
-
 
 pub async fn select_all_carriers(client: &Client) -> Result<Vec<Row>, AppError> {
     let query = "
@@ -103,4 +111,34 @@ pub async fn select_all_carriers(client: &Client) -> Result<Vec<Row>, AppError> 
 
     let rows = client.query(query, &[]).await?;
     Ok(rows)
+}
+
+pub async fn insert_roam_out_stg(
+    client: &Client,
+    db_records: Vec<RoamOutDBRecord>,
+) -> Result<(), AppError> {
+    let query = "
+        INSERT INTO stg_roam_out (batch_id, batch_date, imsi, msisdn, vlr_number, carrier_name, country_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ";
+
+    for record in db_records {
+        client
+            .execute(
+                query,
+                &[
+                    &record.batch_id,
+                    &record.batch_date,
+                    &record.imsi,
+                    &record.msisdn,
+                    &record.vlr_number,
+                    &record.carrier_name,
+                    &record.country_name,
+                ],
+            )
+            .await
+            .map_err(AppError::DatabaseError)?;
+    }
+
+    Ok(())
 }

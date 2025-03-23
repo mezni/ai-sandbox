@@ -3,10 +3,29 @@ use crate::config::Config;
 use crate::store;
 use log::{error, info};
 use regex::Regex;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
 use tokio_postgres::Row;
+
+use csv::{ReaderBuilder, Trim};
+use std::{
+    fs::File,
+    io::{self, BufReader},
+};
+
+#[derive(Debug)]
+pub struct CarrierRecord {
+    pub carrier_name: String,
+    pub country_name: String,
+}
+
+#[derive(Debug)]
+struct RoamOutRecord {
+    imsi: String,
+    msisdn: String,
+    vlr_number: String,
+}
 
 pub struct LoadService {
     config: Config,
@@ -57,6 +76,17 @@ impl LoadService {
         let client = store::connection().await?;
         let batch_id = store::insert_batch_execs(&client, path.display().to_string()).await?;
 
+        let carrier_map = get_carriers_map().await?;
+
+        let path_str = path.display().to_string();
+        let db_records = convert_to_db_records(&path_str, &carrier_map, batch_id)?;
+
+        if let Err(err) = store::insert_roam_out_stg(&client, db_records).await {
+            error!("Failed to insert records into database: {}", err);
+        } else {
+            info!("Records successfully inserted into database.");           
+        }
+
         store::update_batch_execs(&client, batch_id, "Completed").await?;
 
         match post_action {
@@ -94,8 +124,8 @@ impl LoadService {
     }
 }
 
-
-pub async fn get_carriers_map() -> Result<HashMap<String, (String, String, String, String, String)>, AppError> {
+pub async fn get_carriers_map()
+-> Result<HashMap<String, (String, String, String, String, String)>, AppError> {
     let mut carrier_map = HashMap::new();
     let client = store::connection().await?;
 
@@ -111,9 +141,85 @@ pub async fn get_carriers_map() -> Result<HashMap<String, (String, String, Strin
 
         carrier_map.insert(
             carrier_key,
-            (carrier_name, carrier_id, country_name, country_code, national_destination_code),
+            (
+                carrier_name,
+                carrier_id,
+                country_name,
+                country_code,
+                national_destination_code,
+            ),
         );
     }
 
     Ok(carrier_map)
+}
+
+pub fn lookup(
+    carrier_map: &HashMap<String, (String, String, String, String, String)>,
+    mut s: String,
+) -> CarrierRecord {
+    loop {
+        if let Some(carrier_info) = carrier_map.get(&s) {
+            return CarrierRecord {
+                carrier_name: carrier_info.0.clone(),
+                country_name: carrier_info.2.clone(),
+            };
+        } else if s.is_empty() {
+            return CarrierRecord {
+                carrier_name: "".to_string(),
+                country_name: "".to_string(),
+            };
+        } else {
+            s.pop(); // Remove the last character
+        }
+    }
+}
+
+pub fn read_csv_file(file_path: &str) -> Result<Vec<RoamOutRecord>, AppError> {
+    let file = File::open(file_path)?;
+    let mut reader = ReaderBuilder::new()
+        .trim(Trim::All)
+        .from_reader(BufReader::new(file));
+
+    let mut records = Vec::new();
+    for result in reader.records() {
+        let record = result?;
+        let imsi = record[0].to_string();
+        let msisdn = record[1].to_string();
+        let vlr_number = record[2].to_string();
+        records.push(RoamOutRecord {
+            imsi: imsi,
+            msisdn: msisdn,
+            vlr_number: vlr_number,
+        });
+    }
+
+    Ok(records)
+}
+
+pub fn convert_to_db_records(
+    path: &str,
+    carrier_map: &HashMap<String, (String, String, String, String, String)>,
+    batch_id: i32,
+) -> Result<Vec<store::RoamOutDBRecord>, AppError> {
+    let records = read_csv_file(path)?;
+
+    let mut db_records = Vec::new();
+    for record in records {
+        let carrier_record = lookup(carrier_map, record.vlr_number.clone());
+
+        let db_record = store::RoamOutDBRecord {
+            batch_id,
+            batch_date: "2025-03-23".to_string(),
+            imsi: record.imsi,
+            msisdn: record.msisdn,
+            vlr_number: record.vlr_number,
+            carrier_name: carrier_record.carrier_name,
+            country_name: carrier_record.country_name,
+        };
+
+        db_records.push(db_record);
+    }
+
+    Ok(db_records)
 }

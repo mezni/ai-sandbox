@@ -28,10 +28,13 @@ CREATE TABLE IF NOT EXISTS batch_execs (
 
 
 CREATE TABLE IF NOT EXISTS stg_roam_out (
-    batch_id INT NOT NULL,    
+    batch_id INT NOT NULL,
+    batch_date VARCHAR(20)  NOT NULL,      
     imsi VARCHAR(100) NOT NULL,
     msisdn VARCHAR(100) NOT NULL,
-    vlr_number VARCHAR(100) NOT NULL
+    vlr_number VARCHAR(100) NOT NULL,
+    carrier_name VARCHAR(100),   
+    country_name VARCHAR(100)   
 );
 
 -- \i /docker-entrypoint-initdb.d/ins_countries.sql
