@@ -4,6 +4,7 @@ use crate::store;
 use log::{error, info};
 use regex::Regex;
 use std::fs;
+use std::path::PathBuf;
 
 pub struct LoadService {
     config: Config,
@@ -55,6 +56,35 @@ impl LoadService {
         let batch_id = store::insert_batch_execs(&client, path.display().to_string()).await?;
 
         store::update_batch_execs(&client, batch_id, "Completed").await?;
+
+        match post_action {
+            "delete" => {
+                fs::remove_file(&path).map_err(AppError::IoError)?;
+                info!("File deleted: {}", path.display());
+            }
+            "archive" if !archive_directory.is_empty() => {
+                let archive_path =
+                    PathBuf::from(archive_directory).join(path.file_name().ok_or_else(|| {
+                        AppError::Unexpected(format!(
+                            "Failed to get file name for: {}",
+                            path.display()
+                        ))
+                    })?);
+
+                fs::rename(&path, &archive_path).map_err(AppError::IoError)?;
+                info!("File moved to archive: {}", archive_path.display());
+            }
+            _ => {
+                error!(
+                    "Invalid post_action: {}. Supported actions: delete, archive.",
+                    post_action
+                );
+                return Err(AppError::Unexpected(format!(
+                    "Invalid post_action: {}",
+                    post_action
+                )));
+            }
+        }
 
         println!("File processed with Batch ID: {}", batch_id);
 
