@@ -5,6 +5,8 @@ use log::{error, info};
 use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
+use std::collections::HashMap;
+use tokio_postgres::Row;
 
 pub struct LoadService {
     config: Config,
@@ -90,4 +92,28 @@ impl LoadService {
 
         Ok(())
     }
+}
+
+
+pub async fn get_carriers_map() -> Result<HashMap<String, (String, String, String, String, String)>, AppError> {
+    let mut carrier_map = HashMap::new();
+    let client = store::connection().await?;
+
+    let carriers = store::select_all_carriers(&client).await?;
+
+    for row in carriers {
+        let carrier_key: String = row.get("code");
+        let carrier_name: String = row.get("carrier_name");
+        let carrier_id: String = row.get("carrier_id");
+        let country_name: String = row.get("country_name");
+        let country_code: String = row.get("country_code");
+        let national_destination_code: String = row.get("national_destination_code");
+
+        carrier_map.insert(
+            carrier_key,
+            (carrier_name, carrier_id, country_name, country_code, national_destination_code),
+        );
+    }
+
+    Ok(carrier_map)
 }
