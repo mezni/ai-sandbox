@@ -1,1 +1,0 @@
-/home/dali/WORK/analytics/work/loader-service/target/debug/loader-service: /home/dali/WORK/analytics/work/loader-service/src/errors.rs /home/dali/WORK/analytics/work/loader-service/src/logger.rs /home/dali/WORK/analytics/work/loader-service/src/main.rs
