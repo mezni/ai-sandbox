@@ -1,23 +1,13 @@
-mod config;
 mod errors;
-mod service;
-mod store;
+mod logger;
 
-use crate::config::read_config;
-use crate::errors::AppError;
-use crate::service::LoadService;
-
-use env_logger;
-use log::info;
+use errors::AppError;
+use logger::Logger;
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    env_logger::init();
-    info!("Application started");    
-    println!("Hello, world!");
-    let config_file = "config.yaml";
-    let config = read_config(config_file).unwrap();
-    let service = LoadService::new(config).await?;
-    service.execute().await?;
+    Logger::init();
+    Logger::info("Start Service");
+    Logger::info("Stop Service");
     Ok(())
 }
