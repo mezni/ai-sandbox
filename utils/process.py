@@ -66,16 +66,16 @@ def get_rangers_df(path):
 
     df['CountryCode'] = filebase
     df = df[df['Type'].isin(['MOBILE', 'FIXED_LINE_OR_MOBILE'])]
-    df = df [['Prefix','Length','Operator','Regions']]
+    df = df [['CountryCode','Prefix','Length','Operator','Regions']]
 
     df['Operator'] = df['Operator'].str.replace('"', '', regex=False)
     df['Regions'] = df['Regions'].str.replace('"', '', regex=False)
     df['Prefix'] = df['Prefix'].astype(str)
     df['flattened'] = df['Prefix'].apply(flatten_range)
     df = df.explode('flattened').reset_index(drop=True)
-    df = df [['flattened','Length','Operator','Regions']]
+    df = df [['CountryCode','flattened','Length','Operator','Regions']]
     df = df.rename(columns={'flattened': 'Prefix'})
-    df = df [['Prefix','Length','Operator','Regions']]
+    df = df [['CountryCode','Prefix','Length','Operator','Regions']]
     return df
 
 def main():
@@ -104,10 +104,10 @@ def main():
                 join_df=ranges_df
                 join_df = join_df.rename(columns={'Operator': 'OperatorId'}) 
                 join_df['join_df']=np.nan
-            join_df=join_df[['Prefix','Length','OperatorId','OperatorName','Regions']]
+            join_df=join_df[['CountryCode','Prefix','Length','OperatorId','OperatorName','Regions']]
             global_df = pd.concat([global_df, join_df], ignore_index=True)
 
-    print (global_df.tail(20))
+    print (global_df.head())
     global_df.to_csv('tmp.csv',index=False)
 
 main()
