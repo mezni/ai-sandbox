@@ -1,0 +1,2 @@
+(venv) dali@dali-VBox:~/WORK/analytics/utils/INPUT$ mv /home/dali/Downloads/ranges.csv ranges/265.csv
+(venv) dali@dali-VBox:~/WORK/analytics/utils/INPUT$ mv /home/dali/Downloads/operators.csv operators/265.csv
