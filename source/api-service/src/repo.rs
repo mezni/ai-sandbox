@@ -63,9 +63,20 @@ pub async fn last_date(client: &Client) -> Result<String, AppError> {
     Ok(result)
 }
 
-pub async fn last_roam_out(client: &Client) -> Result<i64, AppError> {
+pub async fn count_last_roam_out(client: &Client) -> Result<i64, AppError> {
     let row = client
         .query_one(SELECT_LAST_ROAM_OUT_QUERY, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let result: i64 = row.get(0);
+
+    Ok(result)
+}
+
+pub async fn count_last_roam_in(client: &Client) -> Result<i64, AppError> {
+    let row = client
+        .query_one(SELECT_COUNT_ROAM_IN_QUERY, &[])
         .await
         .map_err(AppError::DatabaseError)?;
 
