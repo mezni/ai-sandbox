@@ -1,5 +1,6 @@
 use core::errors::AppError;
-use tokio_postgres::Client;
+use serde_json::Value;
+use tokio_postgres::{Client, Row};
 
 const SELECT_LAST_DATE_QUERY: &str = "SELECT date_text
 FROM dim_time
@@ -59,7 +60,6 @@ pub async fn last_date(client: &Client) -> Result<String, AppError> {
         .map_err(AppError::DatabaseError)?;
 
     let result: String = row.get(0);
-
     Ok(result)
 }
 
@@ -70,7 +70,6 @@ pub async fn count_last_roam_out(client: &Client) -> Result<i64, AppError> {
         .map_err(AppError::DatabaseError)?;
 
     let result: i64 = row.get(0);
-
     Ok(result)
 }
 
@@ -81,7 +80,6 @@ pub async fn count_last_roam_in(client: &Client) -> Result<i64, AppError> {
         .map_err(AppError::DatabaseError)?;
 
     let result: i64 = row.get(0);
-
     Ok(result)
 }
 
@@ -92,7 +90,6 @@ pub async fn count_anomalies(client: &Client) -> Result<i64, AppError> {
         .map_err(AppError::DatabaseError)?;
 
     let result: i64 = row.get(0);
-
     Ok(result)
 }
 
@@ -103,6 +100,31 @@ pub async fn count_notifications(client: &Client) -> Result<i64, AppError> {
         .map_err(AppError::DatabaseError)?;
 
     let result: i64 = row.get(0);
-
     Ok(result)
+}
+
+pub async fn fetch_stats(
+    client: &Client,
+    query: String,
+) -> Result<Vec<(Option<String>, Option<String>, Option<String>, i64)>, AppError> {
+    println!("Generated stats query: {}", query);
+
+    let rows = client
+        .query(query.as_str(), &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let results = rows
+        .into_iter()
+        .map(|row| {
+            let date = row.try_get("date").ok();
+            let country = row.try_get("country").ok();
+            let operator = row.try_get("operator").ok();
+            let count: i64 = row.get("count");
+
+            (date, country, operator, count)
+        })
+        .collect();
+
+    Ok(results)
 }
