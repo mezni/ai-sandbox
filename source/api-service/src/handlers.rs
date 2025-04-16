@@ -27,32 +27,39 @@ async fn overview_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
     }
 }
 
-#[get("/api/v1/stats")]
-async fn stats_endpoint(
-    db: web::Data<Arc<DBManager>>,
-    query: web::Query<StatsParams>,
-) -> impl Responder {
-    let fact_table = query.fact.clone();
-    let dimensions: Vec<String> = query
-        .dimensions
-        .as_ref()
-        .map(|d| {
-            d.split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>()
-        })
-        .unwrap_or_default();
-
-    match service::stats_service(db.as_ref(), &fact_table, &dimensions).await {
+#[get("/api/v1/stats/roamout_operators")]
+async fn count_roam_out_operators_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::count_roam_out_operators_service(db.as_ref()).await {
         Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
-        Err(_) => HttpResponse::InternalServerError().json(service::ErrorResponse {
-            error: "Failed to fetch stats".to_string(),
+        Err(e) => HttpResponse::InternalServerError().json(service::ErrorResponse {
+            error: "Failed to fetch roamout by country".to_string(),
         }),
     }
 }
 
+#[get("/api/v1/stats/roamout_countries")]
+async fn count_roam_out_countries_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::count_roam_out_countries_service(db.as_ref()).await {
+        Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
+        Err(e) => HttpResponse::InternalServerError().json(service::ErrorResponse {
+            error: "Failed to fetch roamout by country".to_string(),
+        }),
+    }
+}
+
+#[get("/api/v1/stats/roamout_dates")]
+async fn count_roam_out_dates_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::count_roam_out_dates_service(db.as_ref()).await {
+        Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
+        Err(e) => HttpResponse::InternalServerError().json(service::ErrorResponse {
+            error: "Failed to fetch roamout by country".to_string(),
+        }),
+    }
+}
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(health_check)
         .service(overview_endpoint)
-        .service(stats_endpoint);
+        .service(count_roam_out_operators_endpoint)
+        .service(count_roam_out_countries_endpoint)
+        .service(count_roam_out_dates_endpoint);
 }

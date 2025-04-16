@@ -53,6 +53,37 @@ SELECT COUNT(DISTINCT rule_id) AS cnt
 FROM notifications t
 JOIN latest l USING (date_id, batch_id)";
 
+const SELECT_STATS_ROAM_OUT_OPERATORS_QUERY: &str = "SELECT 
+  t.date_text AS date,
+  c.name_en AS country,
+  o.operator AS operator,
+  COUNT(*) AS count
+FROM fct_roam_out fct
+JOIN dim_countries c ON fct.country_id = c.id
+JOIN dim_time t ON fct.date_id = t.id
+JOIN dim_operators o ON fct.country_id = o.country_id 
+                    AND fct.operator_id = o.id
+GROUP BY t.date_text, c.name_en, o.operator
+ORDER BY t.date_text, c.name_en, o.operator";
+
+const SELECT_STATS_ROAM_OUT_COUNTRIES_QUERY: &str = "SELECT 
+  t.date_text AS date,
+  c.name_en AS country,
+  COUNT(*) AS count
+FROM fct_roam_out fct
+JOIN dim_countries c ON fct.country_id = c.id
+JOIN dim_time t ON fct.date_id = t.id
+GROUP BY t.date_text, c.name_en
+ORDER BY t.date_text, c.name_en";
+
+const SELECT_STATS_ROAM_OUT_DATES_QUERY: &str = "SELECT 
+  t.date_text AS date,
+  COUNT(*) AS count
+FROM fct_roam_out fct
+JOIN dim_time t ON fct.date_id = t.id
+GROUP BY t.date_text
+ORDER BY t.date_text";
+
 pub async fn last_date(client: &Client) -> Result<String, AppError> {
     let row = client
         .query_one(SELECT_LAST_DATE_QUERY, &[])
@@ -103,26 +134,61 @@ pub async fn count_notifications(client: &Client) -> Result<i64, AppError> {
     Ok(result)
 }
 
-pub async fn fetch_stats(
+pub async fn count_roam_out_operators(
     client: &Client,
-    query: String,
-) -> Result<Vec<(Option<String>, Option<String>, Option<String>, i64)>, AppError> {
-    println!("Generated stats query: {}", query);
-
+) -> Result<Vec<(String, String, String, i64)>, AppError> {
     let rows = client
-        .query(query.as_str(), &[])
+        .query(SELECT_STATS_ROAM_OUT_OPERATORS_QUERY, &[])
         .await
         .map_err(AppError::DatabaseError)?;
 
     let results = rows
         .into_iter()
         .map(|row| {
-            let date = row.try_get("date").ok();
-            let country = row.try_get("country").ok();
-            let operator = row.try_get("operator").ok();
+            let date: String = row.get("date");
+            let country: String = row.get("country");
+            let operator: String = row.get("operator");
             let count: i64 = row.get("count");
-
             (date, country, operator, count)
+        })
+        .collect();
+
+    Ok(results)
+}
+
+pub async fn count_roam_out_countries(
+    client: &Client,
+) -> Result<Vec<(String, String, i64)>, AppError> {
+    let rows = client
+        .query(SELECT_STATS_ROAM_OUT_COUNTRIES_QUERY, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let results = rows
+        .into_iter()
+        .map(|row| {
+            let date: String = row.get("date");
+            let country: String = row.get("country");
+            let count: i64 = row.get("count");
+            (date, country, count)
+        })
+        .collect();
+
+    Ok(results)
+}
+
+pub async fn count_roam_out_dates(client: &Client) -> Result<Vec<(String, i64)>, AppError> {
+    let rows = client
+        .query(SELECT_STATS_ROAM_OUT_DATES_QUERY, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let results = rows
+        .into_iter()
+        .map(|row| {
+            let date: String = row.get("date");
+            let count: i64 = row.get("count");
+            (date, count)
         })
         .collect();
 

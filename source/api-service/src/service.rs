@@ -24,8 +24,7 @@ pub struct OverviewResponse {
 }
 #[derive(Serialize)]
 pub struct StatsResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub date: Option<String>,
+    pub date: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -56,37 +55,54 @@ pub async fn overview_service(db: &DBManager) -> Result<OverviewResponse, AppErr
     })
 }
 
-pub async fn stats_service(
+pub async fn count_roam_out_operators_service(
     db: &DBManager,
-    fact_table: &str,
-    dimensions: &[String],
 ) -> Result<Vec<StatsResponse>, AppError> {
-    let select_clause = if dimensions.is_empty() {
-        "COUNT(*) as count".to_string()
-    } else {
-        format!("{}, COUNT(*) as count", dimensions.join(", "))
-    };
-
-    let group_by_clause = if dimensions.is_empty() {
-        "".to_string()
-    } else {
-        format!("GROUP BY {}", dimensions.join(", "))
-    };
-
-    let query = format!(
-        "SELECT {} FROM {} {} ORDER BY count DESC",
-        select_clause, fact_table, group_by_clause
-    );
-
     let client = db.get_client().await?;
-    let raw = repo::fetch_stats(&client, query).await?;
+    let raw = repo::count_roam_out_operators(&client).await?;
 
     let wrapped = raw
         .into_iter()
         .map(|(date, country, operator, count)| StatsResponse {
             date,
-            country,
-            operator,
+            country: Some(country),
+            operator: Some(operator),
+            count,
+        })
+        .collect();
+
+    Ok(wrapped)
+}
+
+pub async fn count_roam_out_countries_service(
+    db: &DBManager,
+) -> Result<Vec<StatsResponse>, AppError> {
+    let client = db.get_client().await?;
+    let raw = repo::count_roam_out_countries(&client).await?;
+
+    let wrapped = raw
+        .into_iter()
+        .map(|(date, country, count)| StatsResponse {
+            date,
+            country: Some(country),
+            operator: None,
+            count,
+        })
+        .collect();
+
+    Ok(wrapped)
+}
+
+pub async fn count_roam_out_dates_service(db: &DBManager) -> Result<Vec<StatsResponse>, AppError> {
+    let client = db.get_client().await?;
+    let raw = repo::count_roam_out_dates(&client).await?;
+
+    let wrapped = raw
+        .into_iter()
+        .map(|(date,  count)| StatsResponse {
+            date,
+            country: None,
+            operator: None,
             count,
         })
         .collect();
