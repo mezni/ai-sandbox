@@ -21,7 +21,6 @@ pub struct OverviewResponse {
     pub count_notifications: i64,
 }
 
-
 pub async fn health_service() -> HealthResponse {
     HealthResponse {
         status: "Health check passed".to_string(),
@@ -41,7 +40,7 @@ pub async fn overview_service(db: &DBManager) -> Result<OverviewResponse, AppErr
         last_date,
         count_roam_in,
         count_roam_out,
-        count_anomalies,     
-        count_notifications, 
+        count_anomalies,
+        count_notifications,
     })
 }

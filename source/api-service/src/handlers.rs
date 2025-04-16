@@ -24,7 +24,5 @@ async fn overview_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(health_check)
-    .service(overview_endpoint)
-    ;
+    cfg.service(health_check).service(overview_endpoint);
 }

@@ -84,7 +84,7 @@ FROM (
     SELECT 
         agg.date_id, 
         agg.batch_id, 
-        (SELECT id FROM rules WHERE name = 'sor_percent_deviation') AS rule_id, 
+        (SELECT id FROM rules WHERE name = 'sor_plan_deviation') AS rule_id, 
         agg.id AS ref_id,
         pln.rate,
         agg.percent,
