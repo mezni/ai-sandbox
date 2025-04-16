@@ -13,6 +13,16 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(body)
 }
 
+#[get("/api/v1/stats/overview")]
+async fn overview_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::overview_service(db.as_ref()).await {
+        Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: "Failed to fetch overview".to_string(),
+        }),
+    }
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(health_check);
 }

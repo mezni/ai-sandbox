@@ -12,10 +12,8 @@ pub struct HealthResponse {
     pub status: String,
 }
 
-
 pub async fn health_service() -> HealthResponse {
     HealthResponse {
         status: "Health check passed".to_string(),
     }
 }
-
