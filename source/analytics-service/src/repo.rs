@@ -105,6 +105,14 @@ FROM (
 ) deviations;
 ";
 
+const GET_ANOMALIE_SOR_DEVIATION_QUERY: &str = "
+select c.name_en, o.operator,  f.country_count , f.operator_count , p.rate as configure, percent as reel, p.routage  
+from fct_sor_out f 
+join sor_plan p on f.country_id = p.country_id and f.operator_id = p.operator_id
+join dim_operators o on f.country_id = o.country_id and f.operator_id = o.id
+join dim_countries c on f.country_id = c.id 
+where f.batch_id = $1";
+
 pub async fn insert_fct_sor_out_records(client: &Client, corr_id: i32) -> Result<(), AppError> {
     client
         .execute(INSERT_SOR_OUT_QUERY, &[&corr_id])
@@ -144,6 +152,15 @@ pub async fn insert_anomalie_msisdn(client: &Client, batch_id: i32) -> Result<()
 pub async fn insert_anomalie_sor_deviation(client: &Client, batch_id: i32) -> Result<(), AppError> {
     client
         .execute(INSERT_ANOMALIE_SOR_DEVIATION_QUERY, &[&batch_id])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    Ok(())
+}
+
+pub async fn get_anomalie_sor_deviation(client: &Client, batch_id: i32) -> Result<(), AppError> {
+    client
+        .execute(GET_ANOMALIE_SOR_DEVIATION_QUERY, &[&batch_id])
         .await
         .map_err(AppError::DatabaseError)?;
 

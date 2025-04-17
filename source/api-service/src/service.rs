@@ -22,6 +22,23 @@ pub struct OverviewResponse {
     pub count_anomalies: i64,
     pub count_notifications: i64,
 }
+
+#[derive(Serialize)]
+pub struct NotificationsResponse {
+    pub notification: String,
+}
+
+#[derive(Serialize)]
+pub struct AnomaliesResponse {
+    pub name_en: String,
+    pub operator: String,
+    pub country_count: String,
+    pub operator_count: String,
+    pub configure: String,
+    pub reel: String,
+    pub routage: String,
+}
+
 #[derive(Serialize)]
 pub struct StatsResponse {
     pub date: String,
@@ -108,4 +125,41 @@ pub async fn count_roam_out_dates_service(db: &DBManager) -> Result<Vec<StatsRes
         .collect();
 
     Ok(wrapped)
+}
+
+pub async fn get_notifications_service(
+    db: &DBManager,
+) -> Result<Vec<NotificationsResponse>, AppError> {
+    let client = db.get_client().await?;
+    let raw = repo::get_notifications(&client).await?;
+
+    let wrapped = raw
+        .into_iter()
+        .map(|notification| NotificationsResponse { notification })
+        .collect();
+
+    Ok(wrapped)
+}
+
+
+pub async fn get_anomalie_sor_service(db: &DBManager) -> Result<Vec<AnomaliesResponse>, AppError> {
+    let client = db.get_client().await?;
+    let anomalies = repo::get_anomalie_sor(&client).await?;
+
+    let responses: Vec<AnomaliesResponse> = anomalies
+        .into_iter()
+        .map(|(name_en, operator, country_count, operator_count, configure, reel, routage)| {
+            AnomaliesResponse {
+                name_en,
+                operator,
+                country_count,
+                operator_count,
+                configure,
+                reel,
+                routage,
+            }
+        })
+        .collect();
+
+    Ok(responses)
 }

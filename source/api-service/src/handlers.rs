@@ -56,10 +56,33 @@ async fn count_roam_out_dates_endpoint(db: web::Data<Arc<DBManager>>) -> impl Re
         }),
     }
 }
+
+#[get("/api/v1/stats/notifications")]
+async fn get_notifications_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::get_notifications_service(db.as_ref()).await {
+        Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
+        Err(e) => HttpResponse::InternalServerError().json(service::ErrorResponse {
+            error: "Failed to fetch roamout by country".to_string(),
+        }),
+    }
+}
+
+#[get("/api/v1/stats/anomalies")]
+async fn get_anomalie_sor_endpoint(db: web::Data<Arc<DBManager>>) -> impl Responder {
+    match service::get_anomalie_sor_service(db.as_ref()).await {
+        Ok(data) => HttpResponse::Ok().json(json!({ "data": data })),
+        Err(e) => HttpResponse::InternalServerError().json(service::ErrorResponse {
+            error: "Failed to fetch roamout by country".to_string(),
+        }),
+    }
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(health_check)
         .service(overview_endpoint)
         .service(count_roam_out_operators_endpoint)
         .service(count_roam_out_countries_endpoint)
-        .service(count_roam_out_dates_endpoint);
+        .service(count_roam_out_dates_endpoint)
+        .service(get_notifications_endpoint)
+        .service(get_anomalie_sor_endpoint);
 }

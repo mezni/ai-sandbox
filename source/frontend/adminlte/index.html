@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Overview Dashboard</title>
+  <title>Alpha</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -35,13 +35,13 @@
 
   <!-- Sidebar -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="#" class="brand-link"><span class="brand-text font-weight-light">My Admin</span></a>
+    <a href="#" class="brand-link"><span class="brand-text font-weight-light">Alpha</span></a>
     <div class="sidebar">
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column">
-          <li class="nav-item"><a href="dashboard1.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard 1</p></a></li>
-          <li class="nav-item"><a href="dashboard2.html" class="nav-link"><i class="nav-icon fas fa-chart-line"></i><p>Dashboard 2</p></a></li>
-          <li class="nav-item"><a href="dashboard3.html" class="nav-link"><i class="nav-icon fas fa-table"></i><p>Dashboard 3</p></a></li>
+          <li class="nav-item"><a href="dashboard1.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Roam Out</p></a></li>
+          <li class="nav-item"><a href="dashboard2.html" class="nav-link"><i class="nav-icon fas fa-chart-line"></i><p>SoR</p></a></li>
+          <li class="nav-item"><a href="dashboard3.html" class="nav-link"><i class="nav-icon fas fa-table"></i><p>SoR</p></a></li>
         </ul>
       </nav>
     </div>
@@ -62,7 +62,7 @@
         <div class="row mb-3">
           <div class="col-12">
             <div class="alert alert-info text-center">
-              <strong>Last Date:</strong> <span id="last_date">Loading...</span>
+              <strong>Dernier chargement:</strong> <span id="last_date">Loading...</span>
             </div>
           </div>
         </div>
@@ -108,11 +108,11 @@
         </div>
 
         <!-- Online Store Visitors (Line Chart) -->
-        <div class="row">
+        <div class="row mb-0"> <!-- Removed margin-bottom -->
           <div class="col-lg-12">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">Roam Out Dates</h3>
+                <h3 class="card-title">Historique Nombre de roamers out</h3>
               </div>
               <div class="card-body">
                 <canvas id="roamOutDatesChart" height="200"></canvas>
@@ -121,12 +121,20 @@
           </div>
         </div>
 
+        <!-- ROW 4: Notifications -->
+        <div class="container mt-2"> <!-- Reduced margin-top -->
+          <h2>Notifications</h2>
+          <div id="notifications-list">
+              <!-- Notifications will be appended here dynamically -->
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
   <footer class="main-footer text-center">
-    <strong>&copy; 2025 <a href="#">Your Company</a></strong>
+    <strong>&copy; 2025 <a href="#">Neutrino</a></strong>
   </footer>
 </div>
 

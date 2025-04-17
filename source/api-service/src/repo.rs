@@ -63,6 +63,7 @@ JOIN dim_countries c ON fct.country_id = c.id
 JOIN dim_time t ON fct.date_id = t.id
 JOIN dim_operators o ON fct.country_id = o.country_id 
                     AND fct.operator_id = o.id
+WHERE fct.batch_id = (SELECT max(batch_id) FROM fct_roam_out)
 GROUP BY t.date_text, c.name_en, o.operator
 ORDER BY t.date_text, c.name_en, o.operator";
 
@@ -73,8 +74,9 @@ const SELECT_STATS_ROAM_OUT_COUNTRIES_QUERY: &str = "SELECT
 FROM fct_roam_out fct
 JOIN dim_countries c ON fct.country_id = c.id
 JOIN dim_time t ON fct.date_id = t.id
+WHERE fct.batch_id = (SELECT max(batch_id) FROM fct_roam_out)
 GROUP BY t.date_text, c.name_en
-ORDER BY t.date_text, c.name_en";
+ORDER BY count desc";
 
 const SELECT_STATS_ROAM_OUT_DATES_QUERY: &str = "SELECT 
   t.date_text AS date,
@@ -83,6 +85,23 @@ FROM fct_roam_out fct
 JOIN dim_time t ON fct.date_id = t.id
 GROUP BY t.date_text
 ORDER BY t.date_text";
+
+const SELECT_NOTIFICATIONS_QUERY: &str = "select count || ' ' || description AS notification
+FROM (
+select r.description , count(*) as count 
+from notifications n 
+join rules r on r.id = n.rule_id
+and batch_id = (select max(batch_id) from notifications) 
+group by r.description
+)";
+
+const GET_ANOMALIE_SOR_DEVIATION_QUERY: &str = "
+select c.name_en, o.operator,  f.country_count , f.operator_count , p.rate as configure, percent as reel, p.routage  
+from fct_sor_out f 
+join sor_plan p on f.country_id = p.country_id and f.operator_id = p.operator_id
+join dim_operators o on f.country_id = o.country_id and f.operator_id = o.id
+join dim_countries c on f.country_id = c.id 
+where f.batch_id = (SELECT max(batch_id) FROM fct_sor_out)";
 
 pub async fn last_date(client: &Client) -> Result<String, AppError> {
     let row = client
@@ -194,3 +213,46 @@ pub async fn count_roam_out_dates(client: &Client) -> Result<Vec<(String, i64)>,
 
     Ok(results)
 }
+
+pub async fn get_notifications(client: &Client) -> Result<Vec<(String)>, AppError> {
+    let rows = client
+        .query(SELECT_NOTIFICATIONS_QUERY, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let results = rows
+        .into_iter()
+        .map(|row| {
+            let notification: String = row.get("notification");
+            (notification)
+        })
+        .collect();
+
+    Ok(results)
+}
+
+
+pub async fn get_anomalie_sor(client: &Client) -> Result<Vec<(String,String,String,String,String,String,String,)>, AppError> {
+    let rows = client
+        .query(GET_ANOMALIE_SOR_DEVIATION_QUERY, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let results = rows
+        .into_iter()
+        .map(|row| {
+            let name_en: String = row.get("name_en");
+            let operator: String = row.get("operator");
+            let country_count: String = row.get("country_count");
+            let operator_count: String = row.get("operator_count");
+            let configure: String = row.get("configure");
+            let reel: String = row.get("reel");
+            let routage: String = row.get("routage");
+            (name_en , operator , country_count , operator_count , configure , reel  , routage)
+        })
+        .collect();
+
+    Ok(results)
+}
+
+
