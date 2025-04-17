@@ -172,6 +172,29 @@ fetch('http://localhost:3000/api/v1/stats/roamout_operators')
   .catch(err => console.error('Failed to fetch roamout_operators data:', err));
 
 
+// Fetching anomalies data
+fetch('http://localhost:3000/api/v1/stats/anomalies')
+  .then(response => response.json())
+  .then(data => {
+    const anomalies = data.data;
+    const tableBody = document.getElementById('anomalies-table').getElementsByTagName('tbody')[0];
+
+    anomalies.forEach(anomaly => {
+      const row = tableBody.insertRow();
+      row.innerHTML = `
+        <td>${anomaly.name_en}</td>
+        <td>${anomaly.operator}</td>
+        <td>${anomaly.configure}</td>
+        <td>${anomaly.reel}</td>
+        <td>${anomaly.country_count}</td>
+        <td>${anomaly.operator_count}</td>
+        <td>${anomaly.routage}</td>
+      `;
+    });
+  })
+  .catch(err => console.error('Failed to fetch anomalies data', err));
+
+
 // Initialize all fetch functions
 window.onload = () => {
   fetchNotifications();

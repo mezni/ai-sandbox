@@ -95,13 +95,20 @@ and batch_id = (select max(batch_id) from notifications)
 group by r.description
 )";
 
-const GET_ANOMALIE_SOR_DEVIATION_QUERY: &str = "
-select c.name_en, o.operator,  f.country_count , f.operator_count , p.rate as configure, percent as reel, p.routage  
+const GET_ANOMALIE_SOR_DEVIATION_QUERY: &str = "select 
+  c.name_en, 
+  o.operator,  
+  f.country_count::text, 
+  f.operator_count::text, 
+  p.rate as configure, 
+  percent::text as reel, 
+  p.routage  
 from fct_sor_out f 
 join sor_plan p on f.country_id = p.country_id and f.operator_id = p.operator_id
 join dim_operators o on f.country_id = o.country_id and f.operator_id = o.id
 join dim_countries c on f.country_id = c.id 
-where f.batch_id = (SELECT max(batch_id) FROM fct_sor_out)";
+where f.batch_id = (SELECT max(batch_id) FROM fct_sor_out);
+";
 
 pub async fn last_date(client: &Client) -> Result<String, AppError> {
     let row = client
@@ -231,8 +238,9 @@ pub async fn get_notifications(client: &Client) -> Result<Vec<(String)>, AppErro
     Ok(results)
 }
 
-
-pub async fn get_anomalie_sor(client: &Client) -> Result<Vec<(String,String,String,String,String,String,String,)>, AppError> {
+pub async fn get_anomalie_sor(
+    client: &Client,
+) -> Result<Vec<(String, String, String, String, String, String, String)>, AppError> {
     let rows = client
         .query(GET_ANOMALIE_SOR_DEVIATION_QUERY, &[])
         .await
@@ -247,12 +255,19 @@ pub async fn get_anomalie_sor(client: &Client) -> Result<Vec<(String,String,Stri
             let operator_count: String = row.get("operator_count");
             let configure: String = row.get("configure");
             let reel: String = row.get("reel");
-            let routage: String = row.get("routage");
-            (name_en , operator , country_count , operator_count , configure , reel  , routage)
+            let routage: Option<String> = row.get("routage");
+            let routage = routage.unwrap_or_else(|| "N/A".to_string());
+            (
+                name_en,
+                operator,
+                country_count,
+                operator_count,
+                configure,
+                reel,
+                routage,
+            )
         })
         .collect();
 
     Ok(results)
 }
-
-

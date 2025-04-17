@@ -141,24 +141,25 @@ pub async fn get_notifications_service(
     Ok(wrapped)
 }
 
-
 pub async fn get_anomalie_sor_service(db: &DBManager) -> Result<Vec<AnomaliesResponse>, AppError> {
     let client = db.get_client().await?;
     let anomalies = repo::get_anomalie_sor(&client).await?;
 
     let responses: Vec<AnomaliesResponse> = anomalies
         .into_iter()
-        .map(|(name_en, operator, country_count, operator_count, configure, reel, routage)| {
-            AnomaliesResponse {
-                name_en,
-                operator,
-                country_count,
-                operator_count,
-                configure,
-                reel,
-                routage,
-            }
-        })
+        .map(
+            |(name_en, operator, country_count, operator_count, configure, reel, routage)| {
+                AnomaliesResponse {
+                    name_en,
+                    operator,
+                    country_count,
+                    operator_count,
+                    configure,
+                    reel,
+                    routage,
+                }
+            },
+        )
         .collect();
 
     Ok(responses)

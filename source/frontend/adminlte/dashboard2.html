@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Alpha</title>
+  <title>Alpha - Dashboard 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -47,9 +47,49 @@
     </div>
   </aside>
 
-  <!-- Content -->
+  <!-- Main content -->
+  <div class="content-wrapper">
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0 text-dark">Dashboard 2 - SoR</h1>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <div class="content">
+      <div class="container-fluid">
+        <!-- Anomalies Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Anomalies Data</h3>
+          </div>
+          <div class="card-body">
+            <table class="table table-bordered table-striped" id="anomalies-table">
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Operator</th>
+                  <th>Expected (%)</th>
+                  <th>Actual (%)</th>
+                  <th>Country Count</th>
+                  <th>Operator Count</th>
+                  <th>Routage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Anomalies data will be inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Footer -->
   <footer class="main-footer text-center">
     <strong>&copy; 2025 <a href="#">Neutrino</a></strong>
   </footer>
