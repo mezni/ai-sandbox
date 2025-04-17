@@ -99,7 +99,7 @@ pub async fn count_roam_out_dates_service(db: &DBManager) -> Result<Vec<StatsRes
 
     let wrapped = raw
         .into_iter()
-        .map(|(date,  count)| StatsResponse {
+        .map(|(date, count)| StatsResponse {
             date,
             country: None,
             operator: None,
