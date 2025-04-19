@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdminLTE Dashboard</title>
+
+  <!-- AdminLTE CSS -->
+  <link rel="stylesheet" href="dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+
+  <!-- Select2 -->
+  <link rel="stylesheet" href="plugins/select2/css/select2.min.css">
+  <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700">
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+  <div class="wrapper">
+
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+          <a href="#" class="nav-link">Home</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="main-sidebar sidebar-light-primary elevation-4">
+      <a href="#" class="brand-link">
+        <span class="brand-text font-weight-light">AdminLTE</span>
+      </a>
+      <div class="sidebar">
+        <nav class="mt-2">
+          <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
+            <li class="nav-item">
+              <a href="#" class="nav-link active">
+                <i class="nav-icon fas fa-tachometer-alt"></i>
+                <p>Dashboard</p>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <div class="content-wrapper">
+      <div class="content-header">
+        <div class="container-fluid">
+          <h1 class="m-0">Dashboard</h1>
+        </div>
+      </div>
+
+      <section class="content px-3 pb-5">
+        <div class="container-fluid">
+          <!-- Row 1 -->
+          <div class="row">
+            <!-- Roamers by Country & Operator -->
+            <div class="col-md-6 d-flex">
+              <div class="card w-100 h-100">
+                <div class="card-header border-0">
+                  <div class="d-flex justify-content-between">
+                    <h3 class="card-title">Roamers by Country & Operator</h3>
+                    <a href="javascript:void(0);">View Report</a>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Country Filter -->
+                  <div class="form-group">
+                    <label for="countrySelect">Select Country:</label>
+                    <select id="countrySelect" class="form-control select2" style="width: 100%;">
+                      <option value="USA">USA</option>
+                      <option value="Germany">Germany</option>
+                      <option value="France">France</option>
+                    </select>
+                  </div>
+
+                  <!-- Roamer Stats -->
+                  <div class="d-flex">
+                    <p class="d-flex flex-column">
+                      <span class="text-bold text-lg">122,450</span>
+                      <span>Total Roamers This Year</span>
+                    </p>
+                    <p class="ml-auto d-flex flex-column text-right">
+                      <span class="text-danger">
+                        <i class="fas fa-arrow-down"></i> 5.3%
+                      </span>
+                      <span class="text-muted">Since Last Year</span>
+                    </p>
+                  </div>
+
+                  <!-- Chart -->
+                  <div class="position-relative mb-4">
+                    <canvas id="roamers-chart" height="300" style="height: 200px;"></canvas>
+                  </div>
+
+                  <!-- Legend -->
+                  <div class="d-flex flex-row justify-content-end">
+                    <span class="mr-2">
+                      <i class="fas fa-square text-primary"></i> This Year
+                    </span>
+                    <span>
+                      <i class="fas fa-square text-gray"></i> Last Year
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Roamers by Countries -->
+            <div class="col-md-6 d-flex">
+              <div class="card w-100 h-100">
+                <div class="card-header ui-sortable-handle" style="cursor: move;">
+                  <h3 class="card-title">
+                    <i class="fas fa-chart-pie mr-1"></i>
+                    Roamers by Countries
+                  </h3>
+                </div>
+                <div class="card-body">
+                  <div class="tab-content p-0">
+                    <!-- Donut Chart -->
+                    <div class="chart tab-pane active" id="donut-chart" style="position: relative; height: 300px;">
+                      <canvas id="donutChart" height="300" style="display: block; width: 100%;"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2 (Empty) -->
+          <div class="row mt-4">
+            <!-- Add your future content here -->
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <strong>&copy; 2025</strong>
+      <div class="float-right d-none d-sm-inline">AdminLTE Example</div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="plugins/jquery/jquery.min.js"></script>
+  <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="plugins/select2/js/select2.full.min.js"></script>
+  <script src="plugins/chart.js/Chart.min.js"></script>
+  <script src="dist/js/adminlte.min.js"></script>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
