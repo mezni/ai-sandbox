@@ -6,7 +6,7 @@ use core::file::FileManager;
 async fn main() -> Result<(), AppError> {
     Logger::init();
     Logger::info("Start process");
-    
+    let file_manager = FileManager::new();
     Logger::info("Stop process");
     Ok(())
 }
