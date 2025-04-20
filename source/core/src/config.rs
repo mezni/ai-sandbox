@@ -27,7 +27,8 @@ impl ServerConfig {
 
 pub fn read_srv_config() -> Result<ServerConfig, AppError> {
     // Load environment variables from the .env file.
-    if let Err(err) = dotenv() {
+    if let Err(_) = dotenvy::from_filename(".env") {
+        println! ("ICI");
         return Err(AppError::FileNotFound(".env".to_string()));
     }
 
