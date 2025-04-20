@@ -14,17 +14,15 @@ async fn main() -> Result<(), AppError> {
 
     let service = match LoadService::new().await {
         Ok(srv) => {
-            Logger::info("App Config loaded");
+            Logger::info("Config loaded");
             srv
         }
         Err(e) => {
             Logger::error(&format!("{}", e));
-            Logger::info("Stop.");
+            Logger::info("Stopping process");
             process::exit(1);
         }
     };
-
-
 
     Logger::info("Stopping process");
 

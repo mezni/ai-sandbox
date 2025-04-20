@@ -44,4 +44,13 @@ pub enum AppError {
     // File system related errors
     #[error("File not found: {0}")]
     FileNotFound(String),
+
+    #[error("Failed to read file {path}: {source}")]
+    FileReadError {
+        path: String,
+        #[source]
+        source: io::Error,
+    },
+    #[error("Invalid config {0}")]
+    InvalidConfig(String),
 }

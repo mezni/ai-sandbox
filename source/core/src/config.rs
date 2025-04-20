@@ -25,11 +25,33 @@ impl ServerConfig {
     }
 }
 
+impl ServerConfig {
+    pub fn validate(&self) -> Result<(), AppError> {
+        if self.dbname.is_none() {
+            return Err(AppError::MissingEnvVar("DB_NAME".into()));
+        }
+        if self.user.is_none() {
+            return Err(AppError::MissingEnvVar("DB_USER".into()));
+        }
+        if self.password.is_none() {
+            return Err(AppError::MissingEnvVar("DB_PASSWORD".into()));
+        }
+        if self.host.is_none() {
+            return Err(AppError::MissingEnvVar("DB_HOST".into()));
+        }
+        Ok(())
+    }
+}
+
 pub fn read_srv_config() -> Result<ServerConfig, AppError> {
-    // Load environment variables from the .env file.
-    if let Err(_) = dotenvy::from_filename(".env") {
-        println! ("ICI");
+    let env_path = Path::new(".env");
+
+    if !env_path.exists() {
         return Err(AppError::FileNotFound(".env".to_string()));
+    }
+
+    if let Err(err) = dotenv() {
+        return Err(AppError::Unexpected(format!("{}", err)));
     }
 
     let mut cfg = ServerConfig::new();
@@ -57,8 +79,46 @@ pub struct Source {
     pub archive_directory: Option<String>,
 }
 
+impl AppConfig {
+    pub fn validate(&self) -> Result<(), AppError> {
+        if self.sources.is_empty() {
+            return Err(AppError::InvalidConfig(
+                "No sources defined in config file".into(),
+            ));
+        }
+
+        for (i, source) in self.sources.iter().enumerate() {
+            if source.source_type.is_empty() {
+                return Err(AppError::InvalidConfig(format!(
+                    "Source at index {} has empty `source_type`",
+                    i
+                )));
+            }
+
+            if source.source_directory.is_empty() {
+                return Err(AppError::InvalidConfig(format!(
+                    "Source at index {} has empty `source_directory`",
+                    i
+                )));
+            }
+        }
+
+        Ok(())
+    }
+}
+
 pub fn read_app_config(file_path: &str) -> Result<AppConfig, AppError> {
-    let file = File::open(Path::new(file_path))?;
+    let path = Path::new(file_path);
+
+    if !path.exists() {
+        return Err(AppError::FileNotFound(file_path.into()));
+    }
+
+    let file = File::open(path).map_err(|e| AppError::FileReadError {
+        path: file_path.into(),
+        source: e,
+    })?;
+
     let config = serde_yaml::from_reader(file).map_err(AppError::YamlError)?;
     Ok(config)
 }
