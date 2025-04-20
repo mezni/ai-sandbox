@@ -1,0 +1,1 @@
+/home/dali/WORK/analytics/source/target/debug/loader-service: /home/dali/WORK/analytics/source/core/src/errors.rs /home/dali/WORK/analytics/source/core/src/file.rs /home/dali/WORK/analytics/source/core/src/lib.rs /home/dali/WORK/analytics/source/core/src/logger.rs /home/dali/WORK/analytics/source/loader-service/src/main.rs
