@@ -2,6 +2,7 @@ use csv::Error as CsvError;
 use serde_yaml::Error as YamlError;
 use std::env;
 use std::io;
+use std::path::PathBuf;
 use thiserror::Error;
 use tokio_postgres::error::Error as PostgresError;
 
@@ -39,4 +40,8 @@ pub enum AppError {
 
     #[error("Missing config: {0}")]
     MissingConfig(&'static str),
+
+    // File system related errors
+    #[error("File not found: {0}")]
+    FileNotFound(String),
 }

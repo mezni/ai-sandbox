@@ -1,3 +1,4 @@
+// core/src/file/mod.rs
 use crate::errors::AppError;
 use std::path::Path;
 
@@ -8,9 +9,23 @@ impl FileManager {
         FileManager
     }
 
-    pub fn check_config_files(&self) -> (bool, bool) {
-        let env_exists = Path::new(".env").exists();
-        let config_exists = Path::new("config.yaml").exists();
-        (env_exists, config_exists)
+    pub fn check_env_file(&self) -> Result<(), AppError> {
+        let env_path = Path::new(".env");
+
+        if !env_path.exists() {
+            return Err(AppError::FileNotFound(".env".to_string()));
+        }
+
+        Ok(())
+    }
+
+    pub fn check_config_file(&self) -> Result<(), AppError> {
+        let env_path = Path::new("config.yaml");
+
+        if !env_path.exists() {
+            return Err(AppError::FileNotFound("config.yaml".to_string()));
+        }
+
+        Ok(())
     }
 }
