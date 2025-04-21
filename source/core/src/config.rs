@@ -6,7 +6,7 @@ use std::env;
 use std::fs::File;
 use std::path::Path;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServerConfig {
     pub dbname: Option<String>,
     pub user: Option<String>,
@@ -65,12 +65,12 @@ pub fn read_srv_config() -> Result<ServerConfig, AppError> {
     Ok(cfg)
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AppConfig {
     pub sources: Vec<Source>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Source {
     pub source_type: String,
     pub source_directory: String,

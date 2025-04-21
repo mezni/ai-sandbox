@@ -12,6 +12,9 @@ sources:
     archive_directory: ARCHIVE/ROUT/
 
   - source_type: roam_in
+    source_directory: TEST
+
+  - source_type: roam_in
     source_directory: INPUT/RIN/
     file_pattern: ^HSS\d{4}_\d{4}_\d{14}\.txt$
     post_action: archive

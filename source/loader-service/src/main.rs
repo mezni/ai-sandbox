@@ -1,11 +1,11 @@
 mod service;
 
-use core::config;
 use core::errors::AppError;
 use core::logger::Logger;
 use service::LoadService;
 
 use std::process;
+
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     Logger::init();
@@ -23,6 +23,10 @@ async fn main() -> Result<(), AppError> {
             process::exit(1);
         }
     };
+
+    if let Err(e) = service.execute().await {
+        Logger::error(&format!("Execution failed: {}", e));
+    }
 
     Logger::info("Stopping process");
 

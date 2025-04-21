@@ -1,0 +1,8 @@
+/home/dali/WORK/analytics/source/target/debug/deps/liblazy_static-434f905c5ad79141.rmeta: /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/lib.rs /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/inline_lazy.rs
+
+/home/dali/WORK/analytics/source/target/debug/deps/liblazy_static-434f905c5ad79141.rlib: /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/lib.rs /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/inline_lazy.rs
+
+/home/dali/WORK/analytics/source/target/debug/deps/lazy_static-434f905c5ad79141.d: /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/lib.rs /home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/inline_lazy.rs
+
+/home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/lib.rs:
+/home/dali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/inline_lazy.rs:

@@ -1,8 +1,9 @@
 use csv::Error as CsvError;
+use regex::Error as RegexError;
 use serde_yaml::Error as YamlError;
 use std::env;
 use std::io;
-use std::path::PathBuf;
+use std::num::ParseIntError;
 use thiserror::Error;
 use tokio_postgres::error::Error as PostgresError;
 
@@ -16,6 +17,9 @@ pub enum AppError {
 
     #[error("YAML error: {0}")]
     YamlError(#[from] YamlError),
+
+    #[error("Regex error: {0}")]
+    RegexError(#[from] RegexError), // Added variant for RegexError
 
     #[error("Unexpected error: {0}")]
     Unexpected(String),
@@ -51,6 +55,11 @@ pub enum AppError {
         #[source]
         source: io::Error,
     },
+
     #[error("Invalid config {0}")]
     InvalidConfig(String),
+
+    // Added variant for ParseIntError
+    #[error("Integer parse error: {0}")]
+    ParseIntError(#[from] ParseIntError),
 }
