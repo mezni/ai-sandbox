@@ -19,10 +19,10 @@ pub struct FileProcessed {
 }
 
 #[derive(Debug, Serialize)]
-struct RoamInDataRecord {
-    hlraddr: String,
-    nsub: u64,
-    nsuba: u64,
+pub struct RoamInDataRecord {
+    pub hlraddr: String,
+    pub nsub: i32,
+    pub nsuba: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -44,14 +44,14 @@ struct SummaryRecord {
 }
 
 #[derive(Debug, Serialize)]
-struct Metadata {
-    creation_date: String,
+pub struct Metadata {
+    pub creation_date: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct RoamInData {
-    metadata: Option<Metadata>,
-    records: Vec<RoamInDataRecord>,
+    pub metadata: Option<Metadata>,
+    pub records: Vec<RoamInDataRecord>,
 }
 
 #[derive(Debug, Serialize)]

@@ -114,6 +114,17 @@ CREATE TABLE IF NOT EXISTS stg_roam_out (
     operator_id INT
 );
 
+CREATE TABLE IF NOT EXISTS stg_roam_in (
+    batch_id INT NOT NULL,
+    batch_date TEXT NOT NULL,
+    hlraddr TEXT,
+    nsub INT,
+    nsuba INT,
+    prefix TEXT,
+    country_id INT,
+    operator_id INT
+);
+
 
 CREATE TABLE IF NOT EXISTS load_operators (
     id           SERIAL PRIMARY KEY,

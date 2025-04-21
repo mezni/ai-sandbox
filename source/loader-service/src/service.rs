@@ -45,9 +45,27 @@ impl LoadService {
             if let Some(parsed) = self.file_manager.parse_file(file).await? {
                 match parsed {
                     file::ParsedData::RoamIn(data) => {
-                        println!("Parsed RoamInData: {:?}", data);
-                        // insert into DB using db_client
+                        let batch_date = data
+                            .metadata
+                            .as_ref()
+                            .map(|m| m.creation_date.clone())
+                            .unwrap_or_else(|| "1970-01-01 00:00:00".to_string());
+
+                        let records: Vec<repo::RoamInDataDBRecord> = data
+                            .records
+                            .into_iter()
+                            .map(|record| repo::RoamInDataDBRecord {
+                                batch_id,
+                                batch_date: batch_date.clone(),
+                                hlraddr: record.hlraddr,
+                                nsub: record.nsub,
+                                nsuba: record.nsuba,
+                            })
+                            .collect();
+
+                        repo::insert_roam_in_stg_records(&db_client, records).await?;
                     }
+
                     file::ParsedData::RoamOut(data) => {
                         println!("Parsed RoamOutData: {:?}", data);
                         // insert into DB using db_client
