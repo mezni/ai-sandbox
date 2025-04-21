@@ -48,8 +48,7 @@ impl LoadService {
                         let batch_date = data
                             .metadata
                             .as_ref()
-                            .map(|m| m.creation_date.clone())
-                            .unwrap_or_else(|| "1970-01-01 00:00:00".to_string());
+                            .map(|m| m.creation_date[..10].to_string());
 
                         let records: Vec<repo::RoamInDataDBRecord> = data
                             .records
@@ -67,8 +66,24 @@ impl LoadService {
                     }
 
                     file::ParsedData::RoamOut(data) => {
-                        println!("Parsed RoamOutData: {:?}", data);
-                        // insert into DB using db_client
+                        let batch_date = data
+                            .metadata
+                            .as_ref()
+                            .map(|m| m.creation_date[..10].to_string());
+
+                        let records: Vec<repo::RoamOutDataDBRecord> = data
+                            .records
+                            .into_iter()
+                            .map(|record| repo::RoamOutDataDBRecord {
+                                batch_id,
+                                batch_date: batch_date.clone(),
+                                imsi: record.imsi,
+                                msisdn: record.msisdn,
+                                vlr_number: record.vlr_number,
+                            })
+                            .collect();
+
+                        repo::insert_roam_out_stg_records(&db_client, records).await?;
                     }
                 }
             }

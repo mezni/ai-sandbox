@@ -11,6 +11,15 @@ pub struct RoamInDataDBRecord {
     pub nsuba: i32,
 }
 
+#[derive(Debug, Serialize)]
+pub struct RoamOutDataDBRecord {
+    pub batch_id: i32,
+    pub batch_date: String,
+    pub imsi: String,
+    pub msisdn: String,
+    pub vlr_number: String,
+}
+
 pub async fn insert_batch_exec(
     db_client: &Client,
     batch_name: &str,
@@ -51,6 +60,33 @@ pub async fn insert_roam_in_stg_records(
                     &record.hlraddr,
                     &(record.nsub as i32),
                     &(record.nsuba as i32),
+                ],
+            )
+            .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn insert_roam_out_stg_records(
+    db_client: &Client,
+    records: Vec<RoamOutDataDBRecord>,
+) -> Result<(), AppError> {
+    let query = "
+        INSERT INTO stg_roam_out (batch_id, batch_date, imsi, msisdn, vlr_number)
+        VALUES ($1, $2, $3, $4, $5)
+    ";
+
+    for record in records {
+        db_client
+            .execute(
+                query,
+                &[
+                    &(record.batch_id as i32),
+                    &record.batch_date,
+                    &record.imsi,
+                    &record.msisdn,
+                    &record.vlr_number,
                 ],
             )
             .await?;
