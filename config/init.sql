@@ -277,3 +277,17 @@ WHERE prefix IN (
 
 -- DROP TABLE load_operators;
 -- DROP TABLE load_prefixes;
+
+
+
+
+CREATE TABLE IF NOT EXISTS batch_execs (
+    id SERIAL PRIMARY KEY,
+    batch_name TEXT NOT NULL,
+    source_type TEXT,
+    source_name TEXT,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,        
+    corr_id INT,
+    batch_status TEXT
+);

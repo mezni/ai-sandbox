@@ -1,3 +1,4 @@
+use crate::repo;
 use core::config;
 use core::db;
 use core::errors::AppError;
@@ -32,15 +33,27 @@ impl LoadService {
     }
 
     pub async fn execute(&self) -> Result<(), AppError> {
-        let db_client = self.db_manager.get_client().await?;
-        let result = self.file_manager.execute(self.app_config.clone()).await?;
-
-        if let Some(roam_in_data) = result {
-            // You can use roam_in_data.metadata and roam_in_data.records here
-            println!("Parsed RoamInData: {:?}", roam_in_data);
-            // e.g., insert into DB using db_client
+        if let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
+            let db_client = self.db_manager.get_client().await?;
+            let batch_id = repo::insert_batch_exec(&db_client,
+                "Loader-srv",
+                &file.file_type,
+                &file.file_path.to_string_lossy(),
+            )
+            .await?;
+            if let Some(parsed) = self.file_manager.parse_file(file).await? {
+                match parsed {
+                    file::ParsedData::RoamIn(data) => {
+                        println!("Parsed RoamInData: {:?}", data);
+                        // insert into DB using db_client
+                    }
+                    file::ParsedData::RoamOut(data) => {
+                        println!("Parsed RoamOutData: {:?}", data);
+                        // insert into DB using db_client
+                    }
+                }
+            }
         }
-
         Ok(())
     }
 }
