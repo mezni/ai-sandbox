@@ -41,6 +41,23 @@ pub async fn insert_batch_exec(
     Ok(id)
 }
 
+pub async fn update_batch_status(
+    db_client: &Client,
+    batch_id: i32,
+    batch_status: &str,
+) -> Result<(), AppError> {
+    db_client
+        .execute(
+            "UPDATE batch_execs
+             SET batch_status = $1, end_time = NOW()
+             WHERE id = $2",
+            &[&batch_status, &batch_id],
+        )
+        .await?;
+
+    Ok(())
+}
+
 pub async fn insert_roam_in_stg_records(
     db_client: &Client,
     records: Vec<RoamInDataDBRecord>,

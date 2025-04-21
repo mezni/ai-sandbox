@@ -33,8 +33,9 @@ impl LoadService {
     }
 
     pub async fn execute(&self) -> Result<(), AppError> {
-        if let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
+        while let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
             let db_client = self.db_manager.get_client().await?;
+            let file_clone = file.clone();
             let batch_id = repo::insert_batch_exec(
                 &db_client,
                 "Loader-srv",
@@ -45,10 +46,7 @@ impl LoadService {
             if let Some(parsed) = self.file_manager.parse_file(file).await? {
                 match parsed {
                     file::ParsedData::RoamIn(data) => {
-                        let batch_date = data
-                            .metadata
-                            .as_ref()
-                            .map(|m| m.creation_date[..10].to_string());
+                        let batch_date = data.metadata.creation_date[..10].to_string();
 
                         let records: Vec<repo::RoamInDataDBRecord> = data
                             .records
@@ -63,13 +61,11 @@ impl LoadService {
                             .collect();
 
                         repo::insert_roam_in_stg_records(&db_client, records).await?;
+                        repo::update_batch_status(&db_client, batch_id, "Success").await?;
                     }
 
                     file::ParsedData::RoamOut(data) => {
-                        let batch_date = data
-                            .metadata
-                            .as_ref()
-                            .map(|m| m.creation_date[..10].to_string());
+                        let batch_date = data.metadata.creation_date[..10].to_string();
 
                         let records: Vec<repo::RoamOutDataDBRecord> = data
                             .records
@@ -84,9 +80,11 @@ impl LoadService {
                             .collect();
 
                         repo::insert_roam_out_stg_records(&db_client, records).await?;
+                        repo::update_batch_status(&db_client, batch_id, "Success").await?;
                     }
                 }
             }
+            self.file_manager.remove_file(&file_clone.file_path).await?;
         }
         Ok(())
     }
