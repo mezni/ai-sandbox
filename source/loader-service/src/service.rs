@@ -35,7 +35,8 @@ impl LoadService {
     pub async fn execute(&self) -> Result<(), AppError> {
         if let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
             let db_client = self.db_manager.get_client().await?;
-            let batch_id = repo::insert_batch_exec(&db_client,
+            let batch_id = repo::insert_batch_exec(
+                &db_client,
                 "Loader-srv",
                 &file.file_type,
                 &file.file_path.to_string_lossy(),

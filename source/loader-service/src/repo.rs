@@ -1,7 +1,6 @@
 use core::errors::AppError;
 use tokio_postgres::Client;
 
-
 pub async fn insert_batch_exec(
     db_client: &Client,
     batch_name: &str,
@@ -19,6 +18,6 @@ pub async fn insert_batch_exec(
         )
         .await?;
 
-        let id: i32 = row.get("id");
+    let id: i32 = row.get("id");
     Ok(id)
 }
