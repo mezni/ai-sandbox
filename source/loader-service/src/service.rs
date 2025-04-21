@@ -33,7 +33,13 @@ impl LoadService {
 
     pub async fn execute(&self) -> Result<(), AppError> {
         let db_client = self.db_manager.get_client().await?;
-        self.file_manager.execute(self.app_config.clone()).await?;
+        let result = self.file_manager.execute(self.app_config.clone()).await?;
+
+        if let Some(roam_in_data) = result {
+            // You can use roam_in_data.metadata and roam_in_data.records here
+            println!("Parsed RoamInData: {:?}", roam_in_data);
+            // e.g., insert into DB using db_client
+        }
 
         Ok(())
     }

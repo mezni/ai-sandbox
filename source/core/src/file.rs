@@ -42,6 +42,12 @@ struct Metadata {
     hour: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct RoamInData {
+    metadata: Option<Metadata>,
+    records: Vec<SubscriberRecord>,
+}
+
 impl FileManager {
     pub fn new() -> Self {
         FileManager
@@ -106,19 +112,25 @@ impl FileManager {
         Ok(None)
     }
 
-    pub async fn execute(&self, app_config: AppConfig) -> Result<(), AppError> {
+    pub async fn execute(&self, app_config: AppConfig) -> Result<Option<RoamInData>, AppError> {
         if let Some(managed_file) = self.next(app_config).await? {
             match managed_file.file_type.as_str() {
-                "ROAM_IN" => self.roam_in_parser(managed_file).await?,
-                "ROAM_OUT" => self.roam_out_parser(managed_file).await?,
-                _ => {}
+                "ROAM_IN" => {
+                    let result = self.roam_in_parser(managed_file).await?;
+                    Ok(Some(result))
+                }
+                "ROAM_OUT" => {
+                    self.roam_out_parser(managed_file).await?;
+                    Ok(None)
+                }
+                _ => Ok(None),
             }
+        } else {
+            Ok(None)
         }
-
-        Ok(())
     }
 
-    pub async fn roam_in_parser(&self, managed_file: ManagedFile) -> Result<(), AppError> {
+    pub async fn roam_in_parser(&self, managed_file: ManagedFile) -> Result<RoamInData, AppError> {
         let file = std::fs::File::open(managed_file.file_path)?;
         let reader = BufReader::new(file);
 
@@ -207,7 +219,7 @@ impl FileManager {
         // println!("\nParsed records:\n{:#?}", records);
         //    println!("\nSummary:\n{:#?}", summary);
 
-        Ok(())
+        Ok(RoamInData { metadata, records })
     }
 
     pub async fn roam_out_parser(&self, managed_file: ManagedFile) -> Result<(), AppError> {
