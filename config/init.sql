@@ -29,7 +29,12 @@ CREATE TABLE metric_definition (
     roam_direction_id INTEGER NOT NULL REFERENCES roam_directions(roam_direction_id),
     metric_type_id INTEGER NOT NULL REFERENCES metrics_type(metric_type_id),  
     name VARCHAR(255) NOT NULL,
-    description TEXT
+    description TEXT,
+    is_active BOOLEAN,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at TIMESTAMP,
+    updated_by TEXT    
 );
 
 CREATE TABLE IF NOT EXISTS countries (
@@ -96,6 +101,7 @@ CREATE TABLE subscribers (
 CREATE TABLE metrics (
     metric_id SERIAL PRIMARY KEY,
     metric_definition_id INTEGER NOT NULL REFERENCES metric_definition(metric_definition_id),
+    batch_id INTEGER,
     period_id INTEGER NOT NULL REFERENCES periods(period_id),
     country_id INTEGER REFERENCES countries(country_id),
     operator_id INTEGER REFERENCES operators(operator_id),  
@@ -243,16 +249,9 @@ SELECT
   'system'
 FROM 
   countries,
-  unnest(string_to_array(prefix, ',')) AS prefix_item;
+  unnest(string_to_array(prefix, ',')) AS prefix_item
+  WHERE iso not in ('FK', 'GP', 'BL', 'MF', 'AX', 'CX', 'CC', 'KZ', 'RU' , 'BN', 'CW', 'BV', 'SJ', 'EH', 'GG', 'IM', 'JE', 'CA', 'US', 'PR', 'TF', 'YT', 'RE','AQ','HM','NF');
 
-
-DELETE FROM prefixes
-WHERE ( prefix) IN (
-  SELECT  prefix
-  FROM prefixes
-  GROUP BY  prefix
-  HAVING COUNT(*) > 1
-);
 
 INSERT INTO networks (tadig, plmn, mcc, mnc, tech_2g, tech_3g, tech_lte, created_by)
 SELECT tadig, plmn, mcc, mnc, t2g, t3g, lte, created_by
@@ -273,13 +272,13 @@ JOIN operators opr ON opr.operator = ldr.operator
 JOIN countries cnt ON cnt.name = ldr.country
 WHERE opr.country_id = cnt.country_id;
 
-DELETE FROM load_prefixes
+DELETE FROM prefixes
 WHERE prefix IN (
     SELECT prefix
     FROM (
         SELECT prefix,
-               ROW_NUMBER() OVER (PARTITION BY prefix ORDER BY id) AS rn
-        FROM load_prefixes
+               ROW_NUMBER() OVER (PARTITION BY prefix ORDER BY prefixe_id) AS rn
+        FROM prefixes
     ) t
     WHERE t.rn > 1
 );

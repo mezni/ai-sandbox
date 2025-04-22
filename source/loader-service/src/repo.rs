@@ -2,6 +2,13 @@ use core::errors::AppError;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Client;
 
+#[derive(Debug)]
+pub struct Prefixes {
+    pub prefix: String,
+    pub country_id: Option<i32>,
+    pub operator_id: Option<i32>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RoamInDataDBRecord {
     pub batch_id: i32,
@@ -9,6 +16,9 @@ pub struct RoamInDataDBRecord {
     pub hlraddr: String,
     pub nsub: i32,
     pub nsuba: i32,
+    pub prefix: String,
+    pub country_id: Option<i32>,
+    pub operator_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -18,6 +28,9 @@ pub struct RoamOutDataDBRecord {
     pub imsi: String,
     pub msisdn: String,
     pub vlr_number: String,
+    pub prefix: String,
+    pub country_id: Option<i32>,
+    pub operator_id: Option<i32>,
 }
 
 pub async fn insert_batch_exec(
@@ -63,8 +76,8 @@ pub async fn insert_roam_in_stg_records(
     records: Vec<RoamInDataDBRecord>,
 ) -> Result<(), AppError> {
     let query = "
-        INSERT INTO stg_roam_in (batch_id, batch_date, hlraddr, nsub, nsuba)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO stg_roam_in (batch_id, batch_date, hlraddr, nsub, nsuba, prefix , country_id , operator_id )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     ";
 
     for record in records {
@@ -77,6 +90,9 @@ pub async fn insert_roam_in_stg_records(
                     &record.hlraddr,
                     &(record.nsub as i32),
                     &(record.nsuba as i32),
+                    &record.prefix,
+                    &record.country_id,
+                    &record.operator_id,
                 ],
             )
             .await?;
@@ -90,8 +106,8 @@ pub async fn insert_roam_out_stg_records(
     records: Vec<RoamOutDataDBRecord>,
 ) -> Result<(), AppError> {
     let query = "
-        INSERT INTO stg_roam_out (batch_id, batch_date, imsi, msisdn, vlr_number)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO stg_roam_out (batch_id, batch_date, imsi, msisdn, vlr_number, prefix , country_id , operator_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     ";
 
     for record in records {
@@ -104,10 +120,32 @@ pub async fn insert_roam_out_stg_records(
                     &record.imsi,
                     &record.msisdn,
                     &record.vlr_number,
+                    &record.prefix,
+                    &record.country_id,
+                    &record.operator_id,
                 ],
             )
             .await?;
     }
 
     Ok(())
+}
+
+pub async fn select_all_prefixes(db_client: &Client) -> Result<Vec<Prefixes>, AppError> {
+    let query = "
+        SELECT prefix, country_id, operator_id FROM prefixes WHERE prefix IS NOT NULL
+    ";
+
+    let rows = db_client.query(query, &[]).await.map_err(AppError::from)?;
+
+    let prefixes = rows
+        .into_iter()
+        .map(|row| Prefixes {
+            prefix: row.get(0),
+            country_id: row.get(1),
+            operator_id: row.get(2),
+        })
+        .collect();
+
+    Ok(prefixes)
 }

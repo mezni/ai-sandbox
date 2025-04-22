@@ -1,8 +1,10 @@
 use crate::repo;
+use crate::repo::Prefixes;
 use core::config;
 use core::db;
 use core::errors::AppError;
 use core::file;
+use std::collections::HashMap;
 
 const CONFIG_FILE: &str = "config.yaml";
 
@@ -35,6 +37,7 @@ impl LoadService {
     pub async fn execute(&self) -> Result<(), AppError> {
         while let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
             let db_client = self.db_manager.get_client().await?;
+            let prefix_map = self.prefix_map().await?;
             let file_clone = file.clone();
             let batch_id = repo::insert_batch_exec(
                 &db_client,
@@ -47,39 +50,52 @@ impl LoadService {
                 match parsed {
                     file::ParsedData::RoamIn(data) => {
                         let batch_date = data.metadata.creation_date[..10].to_string();
+                        let mut db_records = Vec::new();
+                        for record in data.records {
+                            let hlraddr_parts: Vec<&str> = record.hlraddr.split('-').collect();
+                            let hlraddr = hlraddr_parts.get(1).unwrap_or(&"").to_string();
 
-                        let records: Vec<repo::RoamInDataDBRecord> = data
-                            .records
-                            .into_iter()
-                            .map(|record| repo::RoamInDataDBRecord {
+                            let prefix = self.lookup(&prefix_map, hlraddr.clone());
+
+                            let db_record = repo::RoamInDataDBRecord {
                                 batch_id,
                                 batch_date: batch_date.clone(),
-                                hlraddr: record.hlraddr,
+                                hlraddr: hlraddr,
                                 nsub: record.nsub,
                                 nsuba: record.nsuba,
-                            })
-                            .collect();
+                                prefix: prefix.prefix,
+                                country_id: prefix.country_id,
+                                operator_id: prefix.operator_id,
+                            };
 
-                        repo::insert_roam_in_stg_records(&db_client, records).await?;
+                            db_records.push(db_record);
+                        }
+
+                        repo::insert_roam_in_stg_records(&db_client, db_records).await?;
                         repo::update_batch_status(&db_client, batch_id, "Success").await?;
                     }
 
                     file::ParsedData::RoamOut(data) => {
                         let batch_date = data.metadata.creation_date[..10].to_string();
 
-                        let records: Vec<repo::RoamOutDataDBRecord> = data
-                            .records
-                            .into_iter()
-                            .map(|record| repo::RoamOutDataDBRecord {
+                        let mut db_records = Vec::new();
+                        for record in data.records {
+                            let prefix = self.lookup(&prefix_map, record.vlr_number.clone());
+
+                            let db_record = repo::RoamOutDataDBRecord {
                                 batch_id,
                                 batch_date: batch_date.clone(),
                                 imsi: record.imsi,
                                 msisdn: record.msisdn,
                                 vlr_number: record.vlr_number,
-                            })
-                            .collect();
+                                prefix: prefix.prefix,
+                                country_id: prefix.country_id,
+                                operator_id: prefix.operator_id,
+                            };
+                            db_records.push(db_record);
+                        }
 
-                        repo::insert_roam_out_stg_records(&db_client, records).await?;
+                        repo::insert_roam_out_stg_records(&db_client, db_records).await?;
                         repo::update_batch_status(&db_client, batch_id, "Success").await?;
                     }
                 }
@@ -87,5 +103,43 @@ impl LoadService {
             self.file_manager.remove_file(&file_clone.file_path).await?;
         }
         Ok(())
+    }
+
+    pub async fn prefix_map(
+        &self,
+    ) -> Result<HashMap<String, (Option<i32>, Option<i32>)>, AppError> {
+        let db_client = self.db_manager.get_client().await?;
+
+        let prefixes = repo::select_all_prefixes(&db_client).await?;
+
+        let prefix_map: HashMap<String, (Option<i32>, Option<i32>)> = prefixes
+            .into_iter()
+            .map(|p| (p.prefix, (p.country_id, p.operator_id)))
+            .collect();
+
+        Ok(prefix_map)
+    }
+
+    pub fn lookup(
+        &self,
+        prefix_map: &HashMap<String, (Option<i32>, Option<i32>)>,
+        mut s: String,
+    ) -> Prefixes {
+        while !s.is_empty() {
+            if let Some((country_id, operator_id)) = prefix_map.get(&s) {
+                return Prefixes {
+                    prefix: s.clone(),
+                    country_id: *country_id,
+                    operator_id: *operator_id,
+                };
+            }
+            s.pop();
+        }
+
+        Prefixes {
+            prefix: "".to_string(),
+            country_id: None,
+            operator_id: None,
+        }
     }
 }
