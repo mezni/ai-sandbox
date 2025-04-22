@@ -4,6 +4,7 @@ use core::config;
 use core::db;
 use core::errors::AppError;
 use core::file;
+use core::logger::Logger;
 use std::collections::HashMap;
 
 const CONFIG_FILE: &str = "config.yaml";
@@ -36,6 +37,7 @@ impl LoadService {
 
     pub async fn execute(&self) -> Result<(), AppError> {
         while let Some(file) = self.file_manager.next(self.app_config.clone()).await? {
+            Logger::info(&format!("Processing {}", file.file_path.display()));
             let db_client = self.db_manager.get_client().await?;
             let prefix_map = self.prefix_map().await?;
             let file_clone = file.clone();
@@ -73,6 +75,7 @@ impl LoadService {
 
                         repo::insert_roam_in_stg_records(&db_client, db_records).await?;
                         repo::update_batch_status(&db_client, batch_id, "Success").await?;
+                        Logger::info("Processed with success");
                     }
 
                     file::ParsedData::RoamOut(data) => {
@@ -97,10 +100,12 @@ impl LoadService {
 
                         repo::insert_roam_out_stg_records(&db_client, db_records).await?;
                         repo::update_batch_status(&db_client, batch_id, "Success").await?;
+                        Logger::info("Processed with success");
                     }
                 }
             }
             self.file_manager.remove_file(&file_clone.file_path).await?;
+            Logger::info("File removed");
         }
         Ok(())
     }
