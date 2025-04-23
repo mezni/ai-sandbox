@@ -1,7 +1,9 @@
 use crate::service;
+use core::db::DBManager;
 use actix_web::{Error, HttpResponse, Responder, get, web};
 use serde::Deserialize;
 use serde_json::json;
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct MetricsParams {
@@ -22,7 +24,10 @@ async fn health_check() -> impl Responder {
 }
 
 #[get("/api/v1/metrics")]
-async fn get_metrics(params: web::Query<MetricsParams>) -> Result<HttpResponse, Error> {
+async fn get_metrics(
+    db: web::Data<Arc<DBManager>>,
+    params: web::Query<MetricsParams>,
+) -> Result<HttpResponse, Error> {
     // Validate required parameters
     if !["IN", "OUT"].contains(&params.direction.as_str()) {
         return Ok(HttpResponse::BadRequest().json(service::ErrorResponse {
