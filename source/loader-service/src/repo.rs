@@ -45,13 +45,13 @@ pub async fn insert_batch_exec(
         .query_one(
             "INSERT INTO batch_execs (batch_name, source_type, source_name, start_time, batch_status)
              VALUES ($1, $2, $3, NOW(), $4)
-             RETURNING id",
+             RETURNING batch_id",
             &[&batch_name, &source_type, &source_name, &batch_status],
         )
         .await?;
 
-    let id: i32 = row.get("id");
-    Ok(id)
+    let batch_id: i32 = row.get("batch_id");
+    Ok(batch_id)
 }
 
 pub async fn update_batch_status(
@@ -63,7 +63,7 @@ pub async fn update_batch_status(
         .execute(
             "UPDATE batch_execs
              SET batch_status = $1, end_time = NOW()
-             WHERE id = $2",
+             WHERE batch_id = $2",
             &[&batch_status, &batch_id],
         )
         .await?;

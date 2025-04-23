@@ -84,51 +84,26 @@ Top Inbound Networks
 Partner Performance
 
 
-create view v_roam_in_metrics as
-select ms.name as metric_type, md.name as metric_name, md.description as metric_description, pr.period,cn.name , op.operator, mt.value  from metrics mt 
-join metric_definition md on mt.metric_definition_id = md.metric_definition_id
-join periods pr on pr.period_id = mt.period_id
-join metrics_type ms on ms.metric_type_id = md.metric_type_id
-left join countries cn on cn.country_id = mt.country_id
-left join operators op on op.operator_id = mt.operator_id
-;
 
 
 
-INSERT INTO metric_definition (roam_direction_id, metric_type_id, name, description)
-SELECT 
-    rd.roam_direction_id,
-    mt.metric_type_id,
-    'number_subscribers_in_by_country',
-    'Number of subscribers IN (By country)'
-FROM roam_directions rd
-CROSS JOIN metrics_type mt
-WHERE rd.direction = 'IN' AND mt.name = 'GLOBAL';
-
-INSERT INTO metrics (metric_definition_id, batch_id , period_id, value)
-select  (select metric_definition_id from metric_definition where name = 'number_subscribers_in_by_country'),batch_id , period_id, sum(nsub ) 
-from stg_roam_in stg join countries cnt on stg.country_id = cnt.country_id
-join periods prd on stg.batch_date = prd.period
-where cnt.name != 'Tunisia'
-group by batch_id , period_id;
 
 
-
-INSERT INTO metric_definition (roam_direction_id, metric_type_id, name, description)
-SELECT 
-    rd.roam_direction_id,
-    mt.metric_type_id,
-    'number_subscribers_in_by_country',
-    'Number of subscribers IN (By country)'
-FROM roam_directions rd
-CROSS JOIN metrics_type mt
-WHERE rd.direction = 'IN' AND mt.name = 'COUNTRY';
+roamdb=# select * from metrics;
+ metric_id | metric_definition_id | batch_id | date_id | country_id | operator_id | subscriber_id | value 
+-----------+----------------------+----------+---------+------------+-------------+---------------+-------
 
 
-
-INSERT INTO metrics (metric_definition_id, batch_id , period_id, country_id, value)
-select  (select metric_definition_id from metric_definition where name = 'number_subscribers_in_by_country'),batch_id , period_id, stg.country_id, sum(nsub ) 
-from stg_roam_in stg join countries cnt on stg.country_id = cnt.country_id
-join periods prd on stg.batch_date = prd.period
-where cnt.name != 'Tunisia'
-group by batch_id , period_id, stg.country_id;
+INSERT INTO metrics (metric_definition_id, batch_id , date_id, value)
+SELECT (SELECT metric_definition_id FROM metric_definition WHERE name = 'number_subscribers_in'), stg.batch_id, dat.date_id, SUM(nsub) AS value
+FROM stg_roam_in stg
+JOIN countries cnt ON stg.country_id = cnt.country_id
+JOIN dates dat ON stg.batch_date = dat.date_str 
+WHERE stg.operator_id != (
+SELECT operator_id FROM operators opr 
+JOIN countries cnt ON opr.country_id = cnt.country_id
+WHERE cnt.common_name = (select value from global_config WHERE key='home_country')
+AND opr.operator = (select value from global_config WHERE key='home_operator')  
+)
+AND stg.batch_id = 2
+GROUP BY stg.batch_id, dat.date_id;

@@ -6,9 +6,11 @@ use core::logger::Logger;
 use service::LoadService;
 
 use std::process;
+use tokio::time::{Duration, sleep};
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
+    let interval_secs: u64 = 60;
     Logger::init();
 
     Logger::info("Starting process");
@@ -25,10 +27,12 @@ async fn main() -> Result<(), AppError> {
         }
     };
 
-    if let Err(e) = service.execute().await {
-        Logger::error(&format!("Execution failed: {}", e));
+    loop {
+        if let Err(e) = service.execute().await {
+            Logger::error(&format!("Execution failed: {}", e));
+        }
+        sleep(Duration::from_secs(interval_secs)).await;
     }
-
     Logger::info("Stopping process");
 
     Ok(())

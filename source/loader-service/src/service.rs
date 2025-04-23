@@ -8,6 +8,9 @@ use core::logger::Logger;
 use std::collections::HashMap;
 
 const CONFIG_FILE: &str = "config.yaml";
+const SERVICE_NAME: &str = "loader-srv";
+const BATCH_STATUS_SUCCESS: &str = "Success";
+const BATCH_STATUS_FAILURE: &str = "Failure";
 
 pub struct LoadService {
     srv_config: config::ServerConfig,
@@ -43,7 +46,7 @@ impl LoadService {
             let file_clone = file.clone();
             let batch_id = repo::insert_batch_exec(
                 &db_client,
-                "Loader-srv",
+                SERVICE_NAME,
                 &file.file_type,
                 &file.file_path.to_string_lossy(),
             )
@@ -74,7 +77,8 @@ impl LoadService {
                         }
 
                         repo::insert_roam_in_stg_records(&db_client, db_records).await?;
-                        repo::update_batch_status(&db_client, batch_id, "Success").await?;
+                        repo::update_batch_status(&db_client, batch_id, BATCH_STATUS_SUCCESS)
+                            .await?;
                         Logger::info("Processed with success");
                     }
 
@@ -99,7 +103,8 @@ impl LoadService {
                         }
 
                         repo::insert_roam_out_stg_records(&db_client, db_records).await?;
-                        repo::update_batch_status(&db_client, batch_id, "Success").await?;
+                        repo::update_batch_status(&db_client, batch_id, BATCH_STATUS_SUCCESS)
+                            .await?;
                         Logger::info("Processed with success");
                     }
                 }

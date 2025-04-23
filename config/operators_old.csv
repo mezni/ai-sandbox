@@ -1,0 +1,49 @@
+tadig,plmn,mcc,mnc,t2g,t3g,lte,operator,brand,country_iso
+TUNOR,60501,605,01,Yes,Yes,Yes,Orange,Orange,TN
+TUNTA,60503,605,03,Yes,Yes,Yes,Ooredoo,Ooredoo,TN
+TUNTT,60502,605,02,Yes,Yes,Yes,Tunisie Telecom,Tunicell,TN
+FRAF1,20801,208,01,Yes,Yes,Yes,Orange,Orange S.A.,FR
+FRAF2,20810,208,10,Yes,Yes,Yes,SFR,Altice,FR
+FRAF3,20820,208,20,Yes,Yes,Yes,Bouygues,Bouygues Telecom,FR
+FRAF4,34020,340,20,Yes,Yes,Yes,Digicel,DIGICEL Antilles Française Guyane,BL/GF/GP/MF/MQ
+FRAFM,20815,208,15,Yes,Yes,Yes,Free,Iliad,FR
+FRATK,54720,547,20,Yes,Yes,Yes,Vini,Onati S.A.S.,PF
+GLP01,34001,340,01,Yes,Yes,Yes,Orange,Orange Caraïbe Mobiles,BL/GF/GP/MF/MQ
+NCLPT,54601,546,01,Yes,Yes,Yes,Mobilis,OPT New Caledonia,NC
+LBY01,60601,606,01,Yes,Yes,Yes,Madar,Al-Madar Al-Jadeed,LY
+LBYLM,60600,606,00,Yes,Yes,Yes,Libyana,Libyana,LY
+DZAA1,60301,603,01,Yes,Yes,Yes,Mobilis,Algérie Télécom,DZ
+DZAOT,60301,603,02,Yes,Yes,Yes,Djezzy,Optimum Telecom Algérie Spa,DZ
+DZAWT,60301,603,03,Yes,Yes,Yes,Ooredoo,Wataniya Telecom Algérie,DZ
+KWTKT,41904,419,04,Yes,Yes,Yes,STC,Saudi Telecom Company,SA
+SAUZN,42004,420,04,Yes,Yes,Yes,Zain,Zain SA,SA
+SAUET,42003,420,03,Yes,Yes,Yes,Mobily,Etihad Etisalat Company,SA
+ITASI,22201,222,01,Yes,Yes,Yes,TIM,Telecom Italia S.p.A,IT
+ITAWI,22288,222,88,Yes,Yes,Yes,WIND,WIND Tre,IT
+ITAFM,22250,222,50,Yes,Yes,Yes,Iliad,Iliad Italia,IT
+ITAOM,22210,222,10,Yes,Yes,Yes,Vodafone,Vodafone Italia S.p.A,IT
+CANTS,302220,302,220,Yes,Yes,Yes,Telus,Telus Mobility,CA
+CANST,302780,302,780,Yes,Yes,Yes,Sasktel,SaskTel Mobility,CA
+CANRW,302720,302,720,Yes,Yes,Yes,Rogers,Rogers Communications,CA
+CANMC,302370,302,370,Yes,Yes,Yes,Fido,Fido Solutions,CA
+CANBM,302610,302,610,Yes,Yes,Yes,Bell,Bell Mobility,CA
+QATB1,42702,427,02,Yes,Yes,Yes,Vodafone,Vodafone Qatar,QA
+QATQT,42701,427,01,Yes,Yes,Yes,Ooredoo,Ooredoo,QA
+AREDU,42403,424,03,Yes,Yes,Yes,DU,Emirates Integrated Telecommunications Company,AE
+ARETC,42402,424,02,Yes,Yes,Yes,Etisalat,Emirates Telecom Corp,AE
+ARETH,90105,901,05,,,,Thuraya,Thuraya RMSS Network,XX
+MARM1,60401,604,01,Yes,Yes,Yes,IAM,Ittissalat Al-Maghrib (Maroc Telecom),MA
+MARM3,60402,604,02,Yes,Yes,Yes,INWI,Wana Corporate,MA
+MARMT,60400,604,00,Yes,Yes,Yes,Orange,Orange,MA
+POL02,26002,260,02,Yes,Yes,Yes,T-Mobile,T-Mobile Polska S.A.,PL
+POL03,26003,260,03,Yes,Yes,Yes,Orange,Polska Telefonia Komórkowa Centertel Sp. z o.o.,PL
+POLKM,26001,260,01,Yes,Yes,Yes,Plus,Polkomtel Sp. z o.o.,PL
+POLP4,26006,260,06,Yes,Yes,Yes,Play,P4 Sp. z o.o.,PL
+RUS01,25001,250,01,Yes,Yes,Yes,MTS,Mobile TeleSystems,RU
+RUSBD,25099,250,99,Yes,Yes,Yes,Beeline,OJSC Vimpel-Communications,RU
+RUSEC,25035,250,35,Yes,Yes,Yes,MOTIV,EKATERINBURG-2000,RU
+RUSNW,25002,250,02,Yes,Yes,Yes,MegaFon,MegaFon PJSC,RU
+RUST2,25020,250,20,Yes,Yes,Yes,Tele2,Tele2,RU
+KAZ77,40177,401,77,Yes,Yes,Yes,MTS,Tele2.kz,KZ
+KAZKT,40101,401,01,Yes,Yes,Yes,Beeline,KaR-Tel LLP,KZ
+KAZKZ,40102,401,02,Yes,Yes,Yes,Kcell,Kcell JSC,KZ
