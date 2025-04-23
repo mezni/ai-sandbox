@@ -2,14 +2,14 @@ mod handlers;
 mod service;
 
 use core::config;
+use core::db::DBManager;
 use core::errors::AppError;
 use core::logger::Logger;
-use core::db::DBManager;
 
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
-use std::sync::Arc;
 use std::process;
+use std::sync::Arc;
 
 const FRONTEND_URL_LOCAL: &str = "http://localhost:8080";
 const FRONTEND_URL_DOCKER: &str = "http://frontend:8080";

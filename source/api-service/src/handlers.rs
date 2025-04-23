@@ -1,6 +1,7 @@
-use crate::service;
+use crate::service::{self, ErrorResponse};
+use actix_web::error::ErrorInternalServerError;
+use actix_web::{Error, HttpResponse, get, web};
 use core::db::DBManager;
-use actix_web::{Error, HttpResponse, Responder, get, web};
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
@@ -15,12 +16,9 @@ pub struct MetricsParams {
 }
 
 #[get("/api/v1/health")]
-async fn health_check() -> impl Responder {
+async fn health_check() -> HttpResponse {
     let resp = service::health_service().await;
-    let body = service::HealthResponse {
-        status: resp.status.to_string(),
-    };
-    HttpResponse::Ok().json(body)
+    HttpResponse::Ok().json(resp)
 }
 
 #[get("/api/v1/metrics")]
@@ -28,31 +26,35 @@ async fn get_metrics(
     db: web::Data<Arc<DBManager>>,
     params: web::Query<MetricsParams>,
 ) -> Result<HttpResponse, Error> {
-    // Validate required parameters
-    if !["IN", "OUT"].contains(&params.direction.as_str()) {
-        return Ok(HttpResponse::BadRequest().json(service::ErrorResponse {
+    // Normalize
+    let dir = params.direction.to_ascii_uppercase();
+    let dim = params.dimension.to_ascii_uppercase();
+
+    // Validate
+    if !["IN", "OUT"].contains(&dir.as_str()) {
+        return Ok(HttpResponse::BadRequest().json(ErrorResponse {
             error: "Invalid direction. Must be IN or OUT.".into(),
         }));
     }
-
-    if !["GLOBAL", "COUNTRY", "OPERATOR"].contains(&params.dimension.as_str()) {
-        return Ok(HttpResponse::BadRequest().json(service::ErrorResponse {
+    if !["GLOBAL", "COUNTRY", "OPERATOR"].contains(&dim.as_str()) {
+        return Ok(HttpResponse::BadRequest().json(ErrorResponse {
             error: "Invalid dimension. Must be GLOBAL, COUNTRY, or OPERATOR.".into(),
         }));
     }
 
-    let result = service::get_metrics(
-        &params.direction,
-        &params.dimension,
+    // Call service, mapping AppError -> 500 Internal Server Error
+    let data = service::get_metrics(
+        db.as_ref(),
+        &dir,
+        &dim,
         params.aggregation.as_deref(),
         params.start_date.as_deref(),
         params.end_date.as_deref(),
     )
-    .await;
+    .await
+    .map_err(ErrorInternalServerError)?;
 
-    let body = json!({ "data": result });
-
-    Ok(HttpResponse::Ok().json(body))
+    Ok(HttpResponse::Ok().json(json!({ "data": data })))
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
