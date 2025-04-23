@@ -89,21 +89,14 @@ Partner Performance
 
 
 
-roamdb=# select * from metrics;
- metric_id | metric_definition_id | batch_id | date_id | country_id | operator_id | subscriber_id | value 
------------+----------------------+----------+---------+------------+-------------+---------------+-------
 
 
-INSERT INTO metrics (metric_definition_id, batch_id , date_id, value)
-SELECT (SELECT metric_definition_id FROM metric_definition WHERE name = 'number_subscribers_in'), stg.batch_id, dat.date_id, SUM(nsub) AS value
-FROM stg_roam_in stg
-JOIN countries cnt ON stg.country_id = cnt.country_id
-JOIN dates dat ON stg.batch_date = dat.date_str 
-WHERE stg.operator_id != (
-SELECT operator_id FROM operators opr 
-JOIN countries cnt ON opr.country_id = cnt.country_id
-WHERE cnt.common_name = (select value from global_config WHERE key='home_country')
-AND opr.operator = (select value from global_config WHERE key='home_operator')  
-)
-AND stg.batch_id = 2
-GROUP BY stg.batch_id, dat.date_id;
+
+
+select date_str,country,operator,value from v_roam_in_metrics 
+where  metric_name ='number_subscribers_out_by_operator' order by value desc;
+
+
+roamdb=# select * from countries where common_name = 'Switzerland';
+roamdb=# 
+roamdb=# select * from operators where country_id = 78;
