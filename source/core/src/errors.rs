@@ -62,4 +62,7 @@ pub enum AppError {
     // Added variant for ParseIntError
     #[error("Integer parse error: {0}")]
     ParseIntError(#[from] ParseIntError),
+
+    #[error("Bad request: {0}")]    
+    BadRequest(String),
 }

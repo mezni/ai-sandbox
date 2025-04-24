@@ -116,4 +116,6 @@ start_date
 end_date
 count=1
 
- curl "http://localhost:3000/api/v1/metrics?direction=out&dimension=global&start_date=2025-03-14&end_date=2026-03-14"
+curl "http://localhost:3000/api/v1/metrics?direction=out&dimensions=global"
+
+
