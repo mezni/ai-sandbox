@@ -100,3 +100,20 @@ where  metric_name ='number_subscribers_out_by_operator' order by value desc;
 roamdb=# select * from countries where common_name = 'Switzerland';
 roamdb=# 
 roamdb=# select * from operators where country_id = 78;
+
+
+
+
+
+
+
+localhost:3000/api/v1/metrics/metrics?direction=intot&dimensions=global&start_date=2025-04-24&end_date=2025-04-24&count=1
+
+
+direction=intot ,inact, out  
+dimensions=global, country, operator
+start_date
+end_date
+count=1
+
+ curl "http://localhost:3000/api/v1/metrics?direction=out&dimension=global&start_date=2025-03-14&end_date=2026-03-14"
