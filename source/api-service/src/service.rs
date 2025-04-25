@@ -64,7 +64,7 @@ pub async fn get_metrics(
     direction: &str,
     dimensions: &str,
     kind: &str,
-    limit: i32,
+    limit: i64,
 ) -> Result<Vec<MetricsResponse>, AppError> {
     let db_client = db.get_client().await?;
 

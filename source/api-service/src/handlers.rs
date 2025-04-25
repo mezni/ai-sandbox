@@ -13,7 +13,7 @@ fn default_kind() -> String {
     "LATEST".to_string()
 }
 
-fn default_limit() -> i32 {
+fn default_limit() -> i64 {
     0
 }
 
@@ -27,7 +27,7 @@ pub struct MetricsQuery {
     pub kind: String,
 
     #[serde(default = "default_limit")]
-    pub limit: i32,
+    pub limit: i64,
 }
 
 #[get("/api/v1/health")]

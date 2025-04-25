@@ -46,31 +46,66 @@ fn resolve_metric_name(dimension: &str, direction: &str) -> Option<&'static str>
 pub async fn get_metrics(
     client: &Client,
     direction: &str,
-    dimensions: &str,
+    dimension: &str,
     kind: &str,
-    limit: i32,
+    limit: i64,
 ) -> Result<Vec<(String, Option<String>, Option<String>, i32)>, AppError> {
-    let metric_name = match resolve_metric_name(dimensions, direction) {
-        Some(name) => name,
-        None => {
-            return Err(AppError::BadRequest(
-                "Invalid metric or dimension".to_string(),
-            ));
+    let metric_name = resolve_metric_name(dimension, direction)
+        .ok_or_else(|| AppError::BadRequest("Invalid metric or dimension".to_string()))?;
+
+    let (filter_clause, order_clause, query_params): (
+        &str,
+        String,
+        Vec<&(dyn tokio_postgres::types::ToSql + Sync)>,
+    ) = if kind == "LATEST" {
+        let filter = "AND date_str = (SELECT MAX(date_str) FROM v_metrics WHERE metric_name = $1)";
+        let limit_clause = if limit > 0 { " LIMIT $2" } else { "" };
+
+        match dimension.to_ascii_uppercase().as_str() {
+            "GLOBAL" => (
+                filter,
+                format!("{}", limit_clause),
+                if limit > 0 {
+                    vec![&metric_name, &limit]
+                } else {
+                    vec![&metric_name]
+                },
+            ),
+            "COUNTRY" | "OPERATOR" => (
+                filter,
+                format!("ORDER BY value DESC{}", limit_clause),
+                if limit > 0 {
+                    vec![&metric_name, &limit]
+                } else {
+                    vec![&metric_name]
+                },
+            ),
+            _ => return Err(AppError::BadRequest("Invalid dimension".into())),
         }
+    } else {
+        let limit_clause = if limit > 0 { " LIMIT $2" } else { "" };
+        (
+            "",
+            format!("ORDER BY date_str DESC{}", limit_clause),
+            if limit > 0 {
+                vec![&metric_name, &limit]
+            } else {
+                vec![&metric_name]
+            },
+        )
     };
 
-
-
-    let query = "
-        SELECT date_str, country, operator, value
-        FROM v_metrics
-        WHERE metric_name = $1
-        ORDER BY date_str DESC
-        LIMIT $2
-    ";
+    let query = format!(
+        "SELECT date_str, country, operator, value
+         FROM v_metrics
+         WHERE metric_name = $1
+         {}
+         {}",
+        filter_clause, order_clause
+    );
 
     let rows = client
-        .query(query, &[&metric_name, &limit])
+        .query(&query, &query_params)
         .await
         .map_err(AppError::DatabaseError)?;
 
