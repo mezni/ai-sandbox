@@ -63,26 +63,12 @@ pub async fn get_metrics(
     db: &DBManager,
     direction: &str,
     dimensions: &str,
-    start_date: Option<&str>,
-    end_date: Option<&str>,
-    limit: Option<&str>,
+    kind: &str,
+    limit: i32,
 ) -> Result<Vec<MetricsResponse>, AppError> {
     let db_client = db.get_client().await?;
 
-    let max_date_str = repo::get_max_date(&db_client, direction).await?;
-    let max_date = NaiveDate::parse_from_str(&max_date_str, "%Y-%m-%d")
-        .map_err(|e| AppError::Unexpected(format!("Invalid max date: {}", e)))?;
-
-    let (sd, ed) = resolve_date_range(start_date, end_date, max_date)?;
-    let sd_str = sd.format("%Y-%m-%d").to_string();
-    let ed_str = ed.format("%Y-%m-%d").to_string();
-
-    let limit_str = limit.unwrap_or("10");
-
-    let rows = repo::get_metrics(
-        &db_client, direction, dimensions, &sd_str, &ed_str, limit_str,
-    )
-    .await?;
+    let rows = repo::get_metrics(&db_client, direction, dimensions, kind, limit).await?;
 
     let metrics = rows
         .into_iter()

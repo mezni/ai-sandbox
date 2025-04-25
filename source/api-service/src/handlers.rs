@@ -1,18 +1,33 @@
 use crate::service::{self, ErrorResponse};
-use actix_web::error::ErrorInternalServerError;
-use actix_web::{Error, HttpResponse, get, web};
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
+use actix_web::{HttpResponse, Result, get, web};
 use core::db::DBManager;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 
-#[derive(Deserialize)]
+const VALID_DIRECTIONS: &[&str] = &["TOTIN", "ACTIN", "OUT"];
+const VALID_DIMENSIONS: &[&str] = &["GLOBAL", "COUNTRY", "OPERATOR"];
+
+fn default_kind() -> String {
+    "LATEST".to_string()
+}
+
+fn default_limit() -> i32 {
+    0
+}
+
+#[derive(Debug, Deserialize)]
 pub struct MetricsQuery {
-    pub direction: String,
-    pub dimensions: String,
-    pub start_date: Option<String>,
-    pub end_date: Option<String>,
-    pub limit: Option<String>,
+    pub direction: Option<String>,
+
+    pub dimensions: Option<String>,
+
+    #[serde(default = "default_kind")]
+    pub kind: String,
+
+    #[serde(default = "default_limit")]
+    pub limit: i32,
 }
 
 #[get("/api/v1/health")]
@@ -25,44 +40,46 @@ async fn health_check() -> HttpResponse {
 async fn get_metrics(
     db: web::Data<Arc<DBManager>>,
     params: web::Query<MetricsQuery>,
-) -> Result<HttpResponse, Error> {
-    let dir = params.direction.to_ascii_uppercase();
-    let dim = params.dimensions.to_ascii_uppercase();
+) -> Result<HttpResponse> {
+    // Validate presence
+    let direction = match &params.direction {
+        Some(d) => d.to_ascii_uppercase(),
+        None => {
+            return Ok(HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Missing 'direction' parameter.".into(),
+            }));
+        }
+    };
 
-    // Validate direction
-    if !["TOTIN", "ACTIN", "OUT"].contains(&dir.as_str()) {
+    let dimensions = match &params.dimensions {
+        Some(d) => d.to_ascii_uppercase(),
+        None => {
+            return Ok(HttpResponse::BadRequest().json(ErrorResponse {
+                error: "Missing 'dimensions' parameter.".into(),
+            }));
+        }
+    };
+
+    // Validate values
+    if !VALID_DIRECTIONS.contains(&direction.as_str()) {
         return Ok(HttpResponse::BadRequest().json(ErrorResponse {
             error: "Invalid direction. Must be TOTIN, ACTIN or OUT.".into(),
         }));
     }
 
-    // Validate dimensions
-    if !["GLOBAL", "COUNTRY", "OPERATOR"].contains(&dim.as_str()) {
+    if !VALID_DIMENSIONS.contains(&dimensions.as_str()) {
         return Ok(HttpResponse::BadRequest().json(ErrorResponse {
-            error: "Invalid dimension. Must be GLOBAL, COUNTRY, or OPERATOR.".into(),
+            error: "Invalid dimensions. Must be GLOBAL, COUNTRY or OPERATOR.".into(),
         }));
     }
-
-    // Parse or default limit
-    let limit = if dim == "GLOBAL" {
-        params
-            .limit
-            .as_deref()
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(1)
-            .to_string()
-    } else {
-        params.limit.clone().unwrap_or_else(|| "5".to_string())
-    };
 
     // Call service
     let data = service::get_metrics(
         db.as_ref(),
-        &dir,
-        &dim,
-        params.start_date.as_deref(),
-        params.end_date.as_deref(),
-        Some(&limit),
+        &direction,
+        &dimensions,
+        &params.kind,
+        params.limit,
     )
     .await
     .map_err(ErrorInternalServerError)?;
@@ -71,6 +88,5 @@ async fn get_metrics(
 }
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(health_check);
-    cfg.service(get_metrics);
+    cfg.service(health_check).service(get_metrics);
 }

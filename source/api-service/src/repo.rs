@@ -47,9 +47,8 @@ pub async fn get_metrics(
     client: &Client,
     direction: &str,
     dimensions: &str,
-    start_date: &str,
-    end_date: &str,
-    limit: &str,
+    kind: &str,
+    limit: i32,
 ) -> Result<Vec<(String, Option<String>, Option<String>, i32)>, AppError> {
     let metric_name = match resolve_metric_name(dimensions, direction) {
         Some(name) => name,
@@ -60,30 +59,18 @@ pub async fn get_metrics(
         }
     };
 
-    let limit: i64 = match limit.parse() {
-        Ok(val) => val,
-        Err(_) if dimensions.eq_ignore_ascii_case("GLOBAL") => 1,
-        Err(_) if dimensions.eq_ignore_ascii_case("COUNTRY") => 5,
-        Err(_) if dimensions.eq_ignore_ascii_case("OPERATOR") => 5,
-        Err(_) => {
-            return Err(AppError::BadRequest(
-                "Limit must be a valid integer".to_string(),
-            ));
-        }
-    };
+
 
     let query = "
         SELECT date_str, country, operator, value
         FROM v_metrics
         WHERE metric_name = $1
-          AND date_str >= $2 
-          AND date_str < $3
         ORDER BY date_str DESC
-        LIMIT $4
+        LIMIT $2
     ";
 
     let rows = client
-        .query(query, &[&metric_name, &start_date, &end_date, &limit])
+        .query(query, &[&metric_name, &limit])
         .await
         .map_err(AppError::DatabaseError)?;
 
