@@ -1,6 +1,7 @@
 use chrono::Utc;
 use core::errors::AppError;
 use tokio_postgres::Client;
+use tokio_postgres::types::ToSql;
 
 pub async fn get_max_date(client: &Client, direction: &str) -> Result<String, AppError> {
     let query = "
@@ -53,46 +54,62 @@ pub async fn get_metrics(
     let metric_name = resolve_metric_name(dimension, direction)
         .ok_or_else(|| AppError::BadRequest("Invalid metric or dimension".to_string()))?;
 
+    let dim = dimension.to_ascii_uppercase();
+    let is_global = dim == "GLOBAL" || dim == "COUNTRY" || dim == "OPERATOR";
+
+    if !is_global {
+        return Err(AppError::BadRequest("Invalid dimension".into()));
+    }
+
+    let limit_clause = if limit > 0 { " LIMIT $2" } else { "" };
+
     let (filter_clause, order_clause, query_params): (
         &str,
         String,
         Vec<&(dyn tokio_postgres::types::ToSql + Sync)>,
-    ) = if kind == "LATEST" {
-        let filter = "AND date_str = (SELECT MAX(date_str) FROM v_metrics WHERE metric_name = $1)";
-        let limit_clause = if limit > 0 { " LIMIT $2" } else { "" };
-
-        match dimension.to_ascii_uppercase().as_str() {
-            "GLOBAL" => (
-                filter,
-                format!("{}", limit_clause),
-                if limit > 0 {
-                    vec![&metric_name, &limit]
-                } else {
-                    vec![&metric_name]
-                },
-            ),
-            "COUNTRY" | "OPERATOR" => (
-                filter,
-                format!("ORDER BY value DESC{}", limit_clause),
-                if limit > 0 {
-                    vec![&metric_name, &limit]
-                } else {
-                    vec![&metric_name]
-                },
-            ),
-            _ => return Err(AppError::BadRequest("Invalid dimension".into())),
-        }
-    } else {
-        let limit_clause = if limit > 0 { " LIMIT $2" } else { "" };
-        (
-            "",
-            format!("ORDER BY date_str DESC{}", limit_clause),
-            if limit > 0 {
-                vec![&metric_name, &limit]
+    ) = match kind.to_ascii_uppercase().as_str() {
+        "LATEST" => {
+            let filter =
+                "AND date_str = (SELECT MAX(date_str) FROM v_metrics WHERE metric_name = $1)";
+            let order = match dim.as_str() {
+                "GLOBAL" => format!("{}", limit_clause),
+                "COUNTRY" | "OPERATOR" => format!("ORDER BY value DESC{}", limit_clause),
+                _ => unreachable!(),
+            };
+            let params: Vec<&(dyn ToSql + Sync)> = if limit > 0 {
+                vec![
+                    &metric_name as &(dyn ToSql + Sync),
+                    &limit as &(dyn ToSql + Sync),
+                ]
             } else {
-                vec![&metric_name]
-            },
-        )
+                vec![&metric_name as &(dyn ToSql + Sync)]
+            };
+            (filter, order, params)
+        }
+
+        "HISTORY" => {
+            let filter = "
+                    AND date_str <= (SELECT MAX(date_str) FROM v_metrics WHERE metric_name = $1)
+                    AND date_str > (SELECT to_char((to_date(MAX(date_str),'YYYY-MM-DD')-30),'YYYY-MM-DD') FROM v_metrics WHERE metric_name = $1)
+                ";
+            let order = match dim.as_str() {
+                "GLOBAL" => format!("{}", limit_clause),
+                "COUNTRY" | "OPERATOR" => format!("ORDER BY value DESC{}", limit_clause),
+                _ => unreachable!(),
+            };
+
+            let params: Vec<&(dyn ToSql + Sync)> = if limit > 0 {
+                vec![
+                    &metric_name as &(dyn ToSql + Sync),
+                    &limit as &(dyn ToSql + Sync),
+                ]
+            } else {
+                vec![&metric_name as &(dyn ToSql + Sync)]
+            };
+            (filter, order, params)
+        }
+
+        _ => return Err(AppError::BadRequest("Invalid kind".into())),
     };
 
     let query = format!(
@@ -103,6 +120,8 @@ pub async fn get_metrics(
          {}",
         filter_clause, order_clause
     );
+
+    println!("{:?}", query.clone());
 
     let rows = client
         .query(&query, &query_params)

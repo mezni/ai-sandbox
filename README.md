@@ -123,5 +123,19 @@ curl "http://localhost:3000/api/v1/metrics?direction=out&dimensions=global"
 
 direction=intot ,inact, out  
 dimensions=global, country, operator
-type = lastest, history
+kind = lastest, history
 
+
+
+
+CREATE TABLE IF NOT EXISTS sor_plan_config (
+    id SERIAL PRIMARY KEY,
+    country_id INT NOT NULL,
+    operator_id INT NOT NULL,
+    rate TEXT,
+    routage TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT,
+    updated_at TIMESTAMP,
+    updated_by TEXT
+);
