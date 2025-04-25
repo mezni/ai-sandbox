@@ -77,25 +77,22 @@ pub async fn get_metrics(
     let sd_str = sd.format("%Y-%m-%d").to_string();
     let ed_str = ed.format("%Y-%m-%d").to_string();
 
-    let limit_str = limit.unwrap_or("10"); // Default to "10" if None
+    let limit_str = limit.unwrap_or("10");
 
-    let metrics = match (direction.to_ascii_uppercase().as_str(), dimensions.to_ascii_uppercase().as_str()) {
-        ("TOTIN", "GLOBAL") | ("ACTIN", "GLOBAL") | ("OUT", "GLOBAL") => {
-            let rows = repo::get_metrics(&db_client, direction, dimensions, &sd_str, &ed_str, limit_str).await?;
+    let rows = repo::get_metrics(
+        &db_client, direction, dimensions, &sd_str, &ed_str, limit_str,
+    )
+    .await?;
 
-            rows.into_iter()
-                .map(|(date, country, operator, count)| MetricsResponse {
-                    date,
-                    country,
-                    operator,
-                    count,
-                })
-                .collect()
-        }
-
-        _ => Vec::new(),
-    };
+    let metrics = rows
+        .into_iter()
+        .map(|(date, country, operator, count)| MetricsResponse {
+            date,
+            country,
+            operator,
+            count,
+        })
+        .collect();
 
     Ok(metrics)
 }
-

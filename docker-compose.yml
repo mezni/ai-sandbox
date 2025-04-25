@@ -25,7 +25,7 @@ services:
     build:
       context: ./source
       dockerfile: tools/Dockerfile
-    image: alpha/data-generator:latest
+    image: beta/data-generator:latest
     container_name: data-generator
     volumes:
       - ./WORK:/app/WORK

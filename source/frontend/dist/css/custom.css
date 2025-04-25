@@ -64,3 +64,32 @@
     z-index: 1000;
     box-shadow: 0 4px 20px rgba(0,0,0,.15);
   }
+
+  /* Add to your custom.css */
+.card-date {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+
+.small-box .inner {
+  position: relative;
+  padding-right: 60px; /* Make space for the date */
+}
+
+/* Add loading animation */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.loading {
+  animation: pulse 1.5s infinite;
+  background-color: #eee;
+  color: transparent;
+  border-radius: 4px;
+}

@@ -1,6 +1,6 @@
 use crate::service::{self, ErrorResponse};
-use actix_web::{get, web, Error, HttpResponse};
 use actix_web::error::ErrorInternalServerError;
+use actix_web::{Error, HttpResponse, get, web};
 use core::db::DBManager;
 use serde::Deserialize;
 use serde_json::json;
@@ -45,9 +45,14 @@ async fn get_metrics(
 
     // Parse or default limit
     let limit = if dim == "GLOBAL" {
-        params.limit.as_deref().and_then(|s| s.parse::<usize>().ok()).unwrap_or(1).to_string()
+        params
+            .limit
+            .as_deref()
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(1)
+            .to_string()
     } else {
-        params.limit.clone().unwrap_or_else(|| "100".to_string())
+        params.limit.clone().unwrap_or_else(|| "5".to_string())
     };
 
     // Call service

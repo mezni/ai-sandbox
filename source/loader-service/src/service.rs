@@ -1,5 +1,6 @@
 use crate::repo;
 use crate::repo::Prefixes;
+use chrono::NaiveDate;
 use core::config;
 use core::db;
 use core::errors::AppError;
@@ -54,7 +55,9 @@ impl LoadService {
             if let Some(parsed) = self.file_manager.parse_file(file).await? {
                 match parsed {
                     file::ParsedData::RoamIn(data) => {
-                        let batch_date = data.metadata.creation_date[..10].to_string();
+                        // let batch_date = data.metadata.creation_date;
+                        let batch_date = data.metadata.creation_date;
+
                         let mut db_records = Vec::new();
                         for record in data.records {
                             let hlraddr_parts: Vec<&str> = record.hlraddr.split('-').collect();

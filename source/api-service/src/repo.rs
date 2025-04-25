@@ -53,7 +53,11 @@ pub async fn get_metrics(
 ) -> Result<Vec<(String, Option<String>, Option<String>, i32)>, AppError> {
     let metric_name = match resolve_metric_name(dimensions, direction) {
         Some(name) => name,
-        None => return Err(AppError::BadRequest("Invalid metric or dimension".to_string())),
+        None => {
+            return Err(AppError::BadRequest(
+                "Invalid metric or dimension".to_string(),
+            ));
+        }
     };
 
     let limit: i64 = match limit.parse() {
@@ -61,7 +65,11 @@ pub async fn get_metrics(
         Err(_) if dimensions.eq_ignore_ascii_case("GLOBAL") => 1,
         Err(_) if dimensions.eq_ignore_ascii_case("COUNTRY") => 5,
         Err(_) if dimensions.eq_ignore_ascii_case("OPERATOR") => 5,
-        Err(_) => return Err(AppError::BadRequest("Limit must be a valid integer".to_string())),
+        Err(_) => {
+            return Err(AppError::BadRequest(
+                "Limit must be a valid integer".to_string(),
+            ));
+        }
     };
 
     let query = "
