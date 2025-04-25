@@ -118,3 +118,8 @@ count=1
 
 curl "http://localhost:3000/api/v1/metrics?direction=out&dimensions=global"
 
+
+curl "http://localhost:3000/api/v1/metrics?direction=out&dimensions=global"
+
+
+
