@@ -36,13 +36,15 @@ impl AnalyticsService {
                     repo::insert_batch_exec(&db_client, SERVICE_NAME, &source_type, corr_id)
                         .await?;
                 repo::insert_roam_in_metrics(&db_client, corr_id).await?;
-                repo::insert_roam_out_metrics(&db_client, corr_id).await?;
+                repo::cleanup_roam_in_stg(&db_client, corr_id).await?;
                 repo::update_batch_status(&db_client, batch_id, BATCH_STATUS_SUCCESS).await?;
             } else if source_type == "ROAM_OUT" {
                 let batch_id =
                     repo::insert_batch_exec(&db_client, SERVICE_NAME, &source_type, corr_id)
                         .await?;
                 repo::insert_roam_out_metrics(&db_client, corr_id).await?;
+                repo::insert_roam_out_perfs(&db_client, corr_id).await?;
+                repo::cleanup_roam_out_stg(&db_client, corr_id).await?;
                 repo::update_batch_status(&db_client, batch_id, BATCH_STATUS_SUCCESS).await?;
             } else {
                 continue;

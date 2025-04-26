@@ -15,6 +15,16 @@ docker exec -it database psql -U myuser -d roamdb
   ]
 }
 
+COPY load_sor_plan (country, operator, rate, routage)
+FROM '/tmp/sor_plan.csv'
+DELIMITER ',' CSV HEADER;
+
+
+SELECT ctn.common_name, ope.operator, fct.rate, fct.routage, fct.created_by
+from load_sor_plan fct JOIN countries ctn ON fct.country = ctn.common_name
+JOIN operators ope ON fct.operator = ope.operator
+WHERE ctn.country_id = ope.country_id;
+
 
 {
   "data": [
@@ -139,3 +149,71 @@ CREATE TABLE IF NOT EXISTS sor_plan_config (
     updated_at TIMESTAMP,
     updated_by TEXT
 );
+
+
+
+CREATE TABLE IF NOT EXISTS roam_out_perf (
+    roam_out_perf_id SERIAL PRIMARY KEY,    
+    date_id INT NOT NULL,
+    batch_id INT NOT NULL,
+    country_id INT,
+    operator_id INT,
+    country_count INT NOT NULL,
+    operator_count INT NOT NULL,
+    percent REAL
+);
+
+
+
+
+INSERT INTO roam_out_perf (date_id, batch_id, country_id, operator_id, country_count, operator_count, percent)
+SELECT
+    d.date_id,
+    t.batch_id,    
+    t.country_id,
+    t.operator_id,
+    COUNT(*) AS count_by_country_operator,
+    c.total_by_country,
+    ROUND(100.0 * COUNT(*) / c.total_by_country, 2) AS percentage
+FROM stg_roam_out t
+JOIN (
+    SELECT country_id, COUNT(*) AS total_by_country
+    FROM stg_roam_out
+    WHERE batch_id = 1
+    GROUP BY country_id
+) c ON t.country_id = c.country_id
+JOIN dates d ON t.batch_date = d.date_str
+WHERE t.batch_id = 1
+GROUP BY  d.date_id,t.batch_id, t.country_id, t.operator_id, c.total_by_country
+ORDER BY  d.date_id,t.batch_id, t.country_id, t.operator_id;
+
+
+INSERT INTO notifications (date_id, batch_id, rule_id, ref_id, message) 
+
+SELECT date_id, batch_id, rule_id, ref_id, 
+       '- ' || operator || ' ('|| common_name ||') config=' || rate || ' reel=' || percent 
+FROM (
+    SELECT 
+        agg.date_id, 
+        agg.batch_id, 
+        (SELECT id FROM rules WHERE name = 'sor_plan_deviation') AS rule_id, 
+        agg.roam_out_perf_id AS ref_id,
+        pln.rate,
+        agg.percent,
+        ope.operator,
+        cnt.common_name
+    FROM (
+        SELECT *
+        FROM roam_out_perf fct
+        WHERE batch_id = 1
+          AND country_id IN (SELECT country_id FROM sor_plan_config)
+    ) agg
+    LEFT JOIN sor_plan_config pln 
+        ON agg.country_id = pln.country_id 
+       AND agg.operator_id = pln.operator_id
+    JOIN operators ope 
+        ON pln.operator_id = ope.operator_id
+    JOIN countries cnt ON agg.country_id = cnt.country_id 
+    WHERE agg.percent NOT BETWEEN COALESCE(pln.rate::float, 0) - 2 
+                          AND COALESCE(pln.rate::float, 0) + 2
+) deviations;
