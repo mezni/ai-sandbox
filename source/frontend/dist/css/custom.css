@@ -1,95 +1,149 @@
-/* dist/css/custom.css */
+/* Main Variables */
 :root {
-    --primary: #4e73df;
-    --success: #1cc88a;
-    --info: #36b9cc;
-    --warning: #f6c23e;
-    --danger: #e74a3b;
-    --dark: #5a5c69;
-  }
-  
-  .brand-link {
-    border-bottom: 1px solid rgba(255,255,255,.1) !important;
-  }
-  
-  .card-gradient-primary {
-    background: linear-gradient(135deg, var(--primary) 0%, #224abe 100%) !important;
-    color: white;
-  }
-  
-  .card-gradient-success {
-    background: linear-gradient(135deg, var(--success) 0%, #0d8d60 100%) !important;
-    color: white;
-  }
-  
-  .card-gradient-info {
-    background: linear-gradient(135deg, var(--info) 0%, #258391 100%) !important;
-    color: white;
-  }
-  
-  .card-gradient-warning {
-    background: linear-gradient(135deg, var(--warning) 0%, #dda20a 100%) !important;
-    color: white;
-  }
-  
-  .elevation-1 {
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1) !important;
-  }
-  
-  .elevation-2 {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.12) !important;
-  }
-  
-  .user-panel img {
-    transition: all 0.3s ease;
-  }
-  
-  .user-panel img:hover {
-    transform: scale(1.1);
-  }
-  
-  .progress-xs {
-    height: 5px;
-  }
-  
-  .chart-container {
-    position: relative;
-    height: 250px;
-  }
-  
-  .floating-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    box-shadow: 0 4px 20px rgba(0,0,0,.15);
-  }
-
-  /* Add to your custom.css */
-.card-date {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.9);
-  font-weight: 500;
+  --primary: #4e73df;
+  --success: #1cc88a;
+  --info: #36b9cc;
+  --warning: #f6c23e;
+  --danger: #e74a3b;
+  --dark: #5a5c69;
 }
 
-.small-box .inner {
+/* Small Box Improvements */
+.small-box {
+  transition: transform 0.3s ease;
+}
+
+.small-box:hover {
+  transform: translateY(-5px);
+}
+
+.small-box .icon {
+  transition: all 0.3s ease;
+}
+
+.small-box:hover .icon {
+  font-size: 85px;
+}
+
+/* Text Colors */
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+/* Loading Spinner */
+.fa-spinner {
+  margin-right: 8px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+  .small-box .icon {
+    font-size: 60px;
+  }
+  
+  .small-box h3 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .main-header, .main-sidebar {
+    display: none !important;
+  }
+  
+  .content-wrapper {
+    margin-left: 0 !important;
+  }
+  
+  .small-box {
+    border: 1px solid #ddd !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* Vertical Progress Bars */
+.progress-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.progress-vertical {
+  display: flex;
+  height: 100%;
+  min-height: 200px;
+}
+
+.progress-vertical .progress-bar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.progress-vertical .progress {
+  flex-grow: 1;
+  width: 100%;
+  height: auto;
+  background-color: #e9ecef;
+  border-radius: 0.25rem;
   position: relative;
-  padding-right: 60px; /* Make space for the date */
 }
 
-/* Add loading animation */
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+.progress-vertical .progress-bar {
+  width: 100%;
+  height: 0;
+  transition: height 0.6s ease;
+  position: absolute;
+  bottom: 0;
 }
 
-.loading {
-  animation: pulse 1.5s infinite;
-  background-color: #eee;
-  color: transparent;
-  border-radius: 4px;
+.progress-vertical .country-name {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.progress-vertical .progress-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Color variants */
+.progress-vertical .bg-roam-in {
+  background-color: #4e73df;
+}
+
+.progress-vertical .bg-roam-out {
+  background-color: #36b9cc;
+}
+
+/* Progress bar styling */
+.progress-xs {
+  height: 0.5rem;
+}
+
+/* Card header styling */
+.card-header.border-0 {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Card body padding */
+.card-body.pt-0 {
+  padding-top: 0;
+}
+
+/* Loading spinner */
+.text-center.py-4 {
+  padding: 1.5rem 0;
+}
+
+.chart-container {
+  position: relative;
+  height: 250px;
 }
