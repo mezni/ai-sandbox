@@ -66,6 +66,38 @@ services:
     networks:
       - beta_network       
 
+  api-service:
+    build:
+      context: ./source
+      dockerfile: api-service/Dockerfile
+    image: beta/api-service:latest
+    container_name: api-service
+    volumes:
+      - ./.env:/app/.env 
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    restart: always
+    environment:
+      - RUST_LOG=info
+    networks:
+      - beta_network  
+
+  frontend:
+    build:
+      context: ./source/frontend
+      dockerfile: Dockerfile
+    image: beta/frontend:latest
+    container_name: frontend
+    working_dir: /app
+    ports:
+      - "8080:80"
+    restart: always
+    environment:
+      - RUST_LOG=info
+    networks:
+      - beta_network     
+
 volumes:
   postgres_data:
 

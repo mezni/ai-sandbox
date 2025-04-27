@@ -121,7 +121,7 @@ pub async fn get_metrics(
         filter_clause, order_clause
     );
 
-    println!("{:?}", query.clone());
+    //    println!("{:?}", query.clone());
 
     let rows = client
         .query(&query, &query_params)
@@ -138,6 +138,120 @@ pub async fn get_metrics(
                 row.get::<_, i32>(3),
             )
         })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_notifications_summary(
+    client: &Client,
+) -> Result<Vec<(String, String, i32)>, AppError> {
+    let query = "
+        SELECT d.date_str AS date, r.description AS rule, count(*)::int AS count
+        FROM notifications n 
+        JOIN rules r ON n.rule_id = r.id
+        JOIN dates d ON n.date_id = d.date_id
+        WHERE n.date_id = (SELECT max(date_id) FROM notifications)
+        GROUP BY d.date_str, r.description
+    ";
+
+    let rows = client
+        .query(query, &[]) // no &
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let result = rows
+        .into_iter()
+        .map(|row| {
+            (
+                row.get::<_, String>(0),
+                row.get::<_, String>(1),
+                row.get::<_, i32>(2),
+            )
+        })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_notifications_details(
+    client: &Client,
+) -> Result<Vec<(String, String, String)>, AppError> {
+    let query = "
+        SELECT operator || ' (' || common_name || ')' AS operator, 
+               CAST(perct_configure AS TEXT) AS perct_configure,
+                 CAST(perct_reel AS TEXT) AS perct_reel
+        FROM v_roam_out_perf        
+        WHERE date_id = (SELECT max(date_id) FROM v_roam_out_perf)
+        ORDER BY common_name, operator
+    ";
+
+    let rows = client
+        .query(query, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let result = rows
+        .into_iter()
+        .map(|row| {
+            (
+                row.get::<_, String>(0),
+                row.get::<_, String>(1),
+                row.get::<_, String>(2),
+            )
+        })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_notifications_count(
+    client: &Client,
+) -> Result<Vec<i32>, AppError> {
+    let query = "
+        SELECT count(*)::int 
+        FROM (
+            SELECT r.description AS rule, count(*)
+            FROM notifications n 
+            JOIN rules r ON n.rule_id = r.id
+            WHERE n.date_id = (SELECT max(date_id) FROM notifications)
+            GROUP BY r.description
+        ) subquery
+    ";
+
+    let rows = client
+        .query(query, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let result = rows
+        .into_iter()
+        .map(|row| row.get::<_, i32>(0))
+        .collect();
+
+    Ok(result)
+}
+
+
+pub async fn get_alerts_count(
+    client: &Client,
+) -> Result<Vec<i32>, AppError> {
+    let query = "
+            SELECT  count(*)::int 
+            FROM notifications n 
+            JOIN rules r ON n.rule_id = r.id
+            WHERE n.date_id = (SELECT max(date_id) FROM notifications)
+            GROUP BY r.description
+    ";
+
+    let rows = client
+        .query(query, &[])
+        .await
+        .map_err(AppError::DatabaseError)?;
+
+    let result = rows
+        .into_iter()
+        .map(|row| row.get::<_, i32>(0))
         .collect();
 
     Ok(result)

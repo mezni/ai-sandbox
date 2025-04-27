@@ -87,6 +87,47 @@ async fn get_metrics(
     Ok(HttpResponse::Ok().json(json!({ "data": data })))
 }
 
+#[get("/api/v1/notifications/count")]
+async fn get_notifications_count(db: web::Data<Arc<DBManager>>) -> Result<HttpResponse> {
+    let data = service::get_notifications_count(db.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(json!({ "data": data })))
+}
+
+#[get("/api/v1/notifications/summary")]
+async fn get_notifications_summary(db: web::Data<Arc<DBManager>>) -> Result<HttpResponse> {
+    let data = service::get_notifications_summary(db.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(json!({ "data": data })))
+}
+
+#[get("/api/v1/notifications/details")]
+async fn get_notifications_details(db: web::Data<Arc<DBManager>>) -> Result<HttpResponse> {
+    let data = service::get_notifications_details(db.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(json!({ "data": data })))
+}
+
+#[get("/api/v1/alerts/count")]
+async fn get_alerts_count(db: web::Data<Arc<DBManager>>) -> Result<HttpResponse> {
+    let data = service::get_alerts_count(db.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(json!({ "data": data })))
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(health_check).service(get_metrics);
+    cfg.service(health_check)
+        .service(get_metrics)
+        .service(get_notifications_count)
+        .service(get_notifications_summary)
+        .service(get_notifications_details)
+        .service(get_alerts_count);
 }
