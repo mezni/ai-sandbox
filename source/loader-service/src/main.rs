@@ -28,6 +28,7 @@ async fn main() -> Result<(), AppError> {
     };
 
     loop {
+        println!("main enter");
         if let Err(e) = service.execute().await {
             Logger::error(&format!("Execution failed: {}", e));
         }

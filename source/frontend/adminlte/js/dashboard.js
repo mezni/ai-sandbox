@@ -1,5 +1,6 @@
 $(document).ready(function () {
   const API_BASE = 'http://localhost:3000/api/v1';
+
   const METRICS_ENDPOINT = '/metrics';
   const NOTIFICATIONS_ENDPOINT = '/notifications/count';  // Notifications count endpoint
   const ALERTS_ENDPOINT = '/alerts/count';  // Alerts count endpoint

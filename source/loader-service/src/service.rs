@@ -86,8 +86,9 @@ impl LoadService {
                     }
 
                     file::ParsedData::RoamOut(data) => {
+                        println!("enter ROAMOUT");
                         let batch_date = data.metadata.creation_date[..10].to_string();
-
+                        println!("{}",batch_date.clone());
                         let mut db_records = Vec::new();
                         for record in data.records {
                             let prefix = self.lookup(&prefix_map, record.vlr_number.clone());
