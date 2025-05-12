@@ -11,3 +11,6 @@ sources:
 
   - source_type: ROAM_IN
     source_directory: WORK/INPUT/RIN/
+    file_pattern: ^ROAM.*
+
+
