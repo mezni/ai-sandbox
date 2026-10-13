@@ -1,0 +1,64 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/*
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+bin/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Ruff / Linting / Type checking caches
+.ruff_cache/
+.mypy_cache/
+.pytype/
+ypy_cache/
+
+# UV Virtual Environments & Locks
+# (uv.lock should usually be checked in for applications, 
+# but .venv must be ignored so environments don't sync across machines)
+.venv/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
