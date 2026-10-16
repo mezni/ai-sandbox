@@ -1,32 +1,16 @@
-def build_prompt(idea: str) -> str:
-    return f"""
-You are a senior AI Solutions Architect.
-Analyze the following business idea:
-{idea}
-
-Provide:
-1. Problem Statement
-2. Functional Requirements
-3. AI Opportunities
-4. Recommended Solution
-5. High Level Architecture
-6. Risks
-7. Next Steps
-"""
+from .prompt_loader import PromptLoader
+from .prompt_renderer import PromptRenderer
 
 
 def fake_llm(prompt: str) -> str:
-    """Placeholder until we connect a real model."""
-    return f"""
-=== GENERATED SOLUTION ===
-Prompt received:
-{prompt}
-"""
+    return "=== GENERATED SOLUTION ===\n\n" + prompt
 
 
-def main():
-    idea = input("Describe your business idea:\n")
-    prompt = build_prompt(idea)
+def main() -> None:
+    idea = input("Describe your idea:\n")
+    loader = PromptLoader()
+    template = loader.load("solution_designer")
+    prompt = PromptRenderer.render(template, {"idea": idea})
     response = fake_llm(prompt)
     print(response)
 

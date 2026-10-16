@@ -100,23 +100,35 @@ Objective: Understand why every abstraction exists before adopting it.
 
 ## 📍 Current Stage
 
-**Level 1 — Monolithic Script**
+**Level 2 — Prompt Separation**
 
 Status: In Progress ⚙️
 
 ### Current Architecture
 
 ```text
-User Idea ──> Prompt ──> LLM ──> Response
+User Idea ──> Prompt Loader ──> Prompt Template ──> Prompt Renderer ──> LLM ──> Response
 ```
 
 ### Repository Structure
 
 ```text
-agentic-ai-designer/
+arch-agent/
 ├── README.md
+├── CHANGELOG.md
 ├── pyproject.toml
-└── main.py
+├── docs/
+│   └── followup.md
+├── prompts/
+│   └── solution_designer.txt
+├── src/
+│   └── arch_agent/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── prompt_loader.py
+│       └── prompt_renderer.py
+└── tests/
+    └── test_prompt_renderer.py
 ```
 
 ## Example Usage
@@ -257,4 +269,5 @@ At the end of the project, the system transforms a Business Idea into a comprehe
 
 | Stage | Status | Next Milestone |
 | --- | --- | --- |
-| Level 1: Monolithic Script | In Progress ⚙️ | Level 2: Prompt Separation |
+| Level 1: Monolithic Script | Done ✅ | — |
+| Level 2: Prompt Separation | In Progress ⚙️ | Level 3: Prompt Versioning |
