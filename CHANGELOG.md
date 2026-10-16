@@ -15,10 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Versioned prompt templates under `prompts/v1/` and `prompts/v2/`.
   - `prompts/registry.json` (active version) and `prompts/catalog.json` (metadata).
 - `test_active_version_loaded` covering active-version resolution.
+- Level 4 — Structured Outputs:
+  - `ProposalParser` that parses raw model responses into an
+    `ArchitectureProposal`.
+  - `ArchitectureProposal` and `Idea` domain models.
+- Tests for the proposal parser (`tests/test_parser.py`).
+- `Makefile` with `test`, `lint`, and `format` targets.
 
 ### Changed
 
 - `main.py` now loads the active prompt version via `PromptRepository`.
+- Fixed `parser.py` import path (`ai_designer` → `arch_agent`).
+- Reformatted existing sources with `ruff format`.
 
 ## [0.2.0] - 2026-10-15
 

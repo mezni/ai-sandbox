@@ -47,3 +47,22 @@ Application -> Prompt Repository -> Registry -> Versioned Prompt
 - Rollback capability
 - Future prompt evaluations
 - Production-friendly prompt management
+
+
+## Step 4: Structured Outputs
+### Problem
+Raw strings are difficult to evaluate, validate, and process.
+
+### Refactor
+Introduce:
+  - Idea
+  - ArchitectureProposal
+
+## Architecture
+Model ➔ Structured Response ➔ Parser ➔ ArchitectureProposal
+
+## Benefits
+- Easier evaluation
+- Easier testing
+- Easier multi-agent workflows
+- Easier automation

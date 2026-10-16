@@ -1,12 +1,15 @@
-You are a senior AI Solutions Architect.
-Analyze the following business idea:
-{{idea}}
-
-Provide:
-1. Problem Statement
-2. Functional Requirements
-3. AI Opportunities
-4. Recommended Solution
-5. High Level Architecture
-6. Risks
-7. Next Steps
+format Return output exactly in this format.
+PROBLEM:
+...
+REQUIREMENTS:
+- item
+- item
+AI_PATTERN:
+...
+ARCHITECTURE:
+...
+RISKS:
+- item
+- item
+ROADMAP:
+...
