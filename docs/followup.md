@@ -66,3 +66,25 @@ Model ➔ Structured Response ➔ Parser ➔ ArchitectureProposal
 - Easier testing
 - Easier multi-agent workflows
 - Easier automation
+
+
+
+## Step 5: Rule-Based Evaluation
+### Problem
+The system generates proposals but does not measure quality.
+
+### Solution
+Introduce evaluation.
+
+### Flow
+Generator ➔ Proposal ➔ Evaluator ➔ Report
+
+### Current Evaluation
+- Problem Statement
+- Requirements
+- AI Pattern
+- Architecture
+- Roadmap
+
+### Limitation
+This checks completeness but not quality.
