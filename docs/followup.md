@@ -16,7 +16,7 @@ User -> Prompt -> LLM -> Response
 - No domain model
 - No evaluation
 
-## Step 1: Define the product
+## Step 2: Prompt separation
 ### Problem
 if we change 
 - You are an AI Architect
@@ -29,3 +29,21 @@ and a week later quality drops
 
 ## Architecture
 User -> Prompt Loader -> Prompt Template -> Prompt Renderer -> LLM -> Response
+
+## Step 3: Prompt versionning
+### Problem
+- How de we compare v1 and v2?
+- How do we rollback?
+- Which version is active?
+
+### Solution 
+- Treat prompts like code versionning (ex: api/v1 )
+
+## Architecture
+Application -> Prompt Repository -> Registry -> Versioned Prompt
+
+### Benefits
+- Controlled deployment
+- Rollback capability
+- Future prompt evaluations
+- Production-friendly prompt management

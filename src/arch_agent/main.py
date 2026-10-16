@@ -1,5 +1,5 @@
-from .prompt_loader import PromptLoader
 from .prompt_renderer import PromptRenderer
+from .prompt_repository import PromptRepository
 
 
 def fake_llm(prompt: str) -> str:
@@ -8,8 +8,8 @@ def fake_llm(prompt: str) -> str:
 
 def main() -> None:
     idea = input("Describe your idea:\n")
-    loader = PromptLoader()
-    template = loader.load("solution_designer")
+    repo = PromptRepository()
+    template = repo.load("solution_designer")
     prompt = PromptRenderer.render(template, {"idea": idea})
     response = fake_llm(prompt)
     print(response)

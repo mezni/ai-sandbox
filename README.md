@@ -100,14 +100,14 @@ Objective: Understand why every abstraction exists before adopting it.
 
 ## 📍 Current Stage
 
-**Level 2 — Prompt Separation**
+**Level 3 — Prompt Versioning**
 
 Status: In Progress ⚙️
 
 ### Current Architecture
 
 ```text
-User Idea ──> Prompt Loader ──> Prompt Template ──> Prompt Renderer ──> LLM ──> Response
+User Idea ──> Prompt Repository (active version) ──> Prompt Template ──> Prompt Renderer ──> LLM ──> Response
 ```
 
 ### Repository Structure
@@ -120,13 +120,19 @@ arch-agent/
 ├── docs/
 │   └── followup.md
 ├── prompts/
-│   └── solution_designer.txt
+│   ├── catalog.json
+│   ├── registry.json
+│   ├── v1/
+│   │   └── solution_designer.txt
+│   └── v2/
+│       └── solution_designer.txt
 ├── src/
 │   └── arch_agent/
 │       ├── __init__.py
 │       ├── main.py
 │       ├── prompt_loader.py
-│       └── prompt_renderer.py
+│       ├── prompt_renderer.py
+│       └── prompt_repository.py
 └── tests/
     └── test_prompt_renderer.py
 ```
@@ -270,4 +276,5 @@ At the end of the project, the system transforms a Business Idea into a comprehe
 | Stage | Status | Next Milestone |
 | --- | --- | --- |
 | Level 1: Monolithic Script | Done ✅ | — |
-| Level 2: Prompt Separation | In Progress ⚙️ | Level 3: Prompt Versioning |
+| Level 2: Prompt Separation | Done ✅ | — |
+| Level 3: Prompt Versioning | In Progress ⚙️ | Level 4: Domain Models |
