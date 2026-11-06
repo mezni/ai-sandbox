@@ -1,0 +1,586 @@
+openapi: 3.0.3
+info:
+  title: BioSouk Platform REST API
+  description: Complete OpenAPI 3.0 specification for the BioSouk organic marketplace and traceability platform.
+  version: 1.0.0
+  contact:
+    name: BioSouk Engineering Team
+    email: api@biosouk.com
+
+servers:
+  - url: https://api.biosouk.com/v1
+    description: Production API Server
+  - url: http://localhost:8080/v1
+    description: Local Development Server
+
+paths:
+  # ==========================================
+  # AUTHENTICATION & USERS
+  # ==========================================
+  /auth/login:
+    post:
+      summary: Authenticate User
+      description: Authenticate user credentials and return a JWT access token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /auth/register:
+    post:
+      summary: Register New User
+      description: Register a new user profile (Customer, Producer, etc.).
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+  # ==========================================
+  # COMMERCE: PRODUCTS & CATEGORIES
+  # ==========================================
+  /products:
+    get:
+      summary: List Products
+      description: Retrieve catalog products with optional category filtering and pagination.
+      tags:
+        - Products
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+
+    post:
+      summary: Create Product
+      description: Create a new organic product (Producer only).
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+
+  /products/{product_id}:
+    get:
+      summary: Get Product Details
+      description: Retrieve details for a specific product including price and shelf life.
+      tags:
+        - Products
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+  # ==========================================
+  # TRACEABILITY: BATCHES, CERTIFICATIONS & RECALLS
+  # ==========================================
+  /batches:
+    post:
+      summary: Create Production Batch
+      description: Record a new production batch linked to a product and farm origin.
+      tags:
+        - Traceability
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBatchRequest'
+      responses:
+        '201':
+          description: Batch created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /batches/{batch_id}:
+    get:
+      summary: Get Batch Traceability Information
+      description: Fetch full origin, harvest, and certification traceability for a specific batch.
+      tags:
+        - Traceability
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Batch detail with origin and certifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchTraceabilityResponse'
+
+  /certifications:
+    post:
+      summary: Upload Certification
+      description: Attach an organic certificate to a batch.
+      tags:
+        - Traceability
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCertificationRequest'
+      responses:
+        '201':
+          description: Certification registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationResponse'
+
+  # ==========================================
+  # ORDERS & CHECKOUT
+  # ==========================================
+  /orders:
+    post:
+      summary: Create Order
+      description: Submit an order for items in customer cart.
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /orders/{order_id}:
+    get:
+      summary: Get Order Details
+      description: Retrieve details and current status of an order.
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  # ==========================================
+  # AI & SEMANTIC SEARCH
+  # ==========================================
+  /search/semantic:
+    post:
+      summary: Perform AI Semantic Search
+      description: Query products using natural language vector search powered by pgvector.
+      tags:
+        - AI & Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  example: "Best organic product for digestion"
+                limit:
+                  type: integer
+                  default: 5
+      responses:
+        '200':
+          description: Relevant product matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    400BadRequest:
+      description: Invalid payload or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    401Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    404NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: producer@biosouk.com
+        password:
+          type: string
+          example: SecurePassword123!
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 86400
+
+    RegisterUserRequest:
+      type: object
+      required:
+        - email
+        - password
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+          enum: [CUSTOMER, PRODUCER]
+
+    UserResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        status:
+          type: string
+
+    CreateProductRequest:
+      type: object
+      required:
+        - product_name
+        - category_id
+        - pricing_model
+      properties:
+        product_name:
+          type: string
+          example: "Wild Wildflower Honey"
+        category_id:
+          type: string
+          format: uuid
+        pricing_model:
+          type: string
+          enum: [FIXED, WEIGHT_BASED, VOLUME_BASED]
+        shelf_life:
+          type: string
+          example: "24 months"
+
+    ProductResponse:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        producer_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        pricing_model:
+          type: string
+        status:
+          type: string
+
+    CreateBatchRequest:
+      type: object
+      required:
+        - product_id
+        - harvest_date
+        - expiry_date
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        origin_id:
+          type: string
+          format: uuid
+        harvest_date:
+          type: string
+          format: date
+          example: "2026-06-15"
+        production_date:
+          type: string
+          format: date
+          example: "2026-06-20"
+        expiry_date:
+          type: string
+          format: date
+          example: "2028-06-15"
+
+    BatchResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        harvest_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          format: date
+
+    BatchTraceabilityResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        harvest_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          format: date
+        origin:
+          type: object
+          properties:
+            region:
+              type: string
+            country:
+              type: string
+            production_method:
+              type: string
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CertificationResponse'
+
+    CreateCertificationRequest:
+      type: object
+      required:
+        - batch_id
+        - certificate_number
+        - certification_type
+        - valid_from
+        - valid_until
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        certificate_number:
+          type: string
+          example: "EU-ORG-2026-994"
+        certification_type:
+          type: string
+          example: "EU Organic"
+        valid_from:
+          type: string
+          format: date
+        valid_until:
+          type: string
+          format: date
+        verification_url:
+          type: string
+          format: uri
+
+    CertificationResponse:
+      type: object
+      properties:
+        certification_id:
+          type: string
+          format: uuid
+        batch_id:
+          type: string
+          format: uuid
+        certificate_number:
+          type: string
+        certification_type:
+          type: string
+        valid_until:
+          type: string
+          format: date
+        verification_url:
+          type: string
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - customer_id
+        - items
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - product_id
+              - batch_id
+              - quantity
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              batch_id:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+
+    OrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        total_amount:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "INVALID_PAYLOAD"
+        message:
+          type: string
+          example: "Expiry date must be strictly after harvest date."
