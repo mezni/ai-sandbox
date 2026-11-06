@@ -1,7 +1,7 @@
-# API Specification
+# Synthetic Data Generation Specification
 
 **Project:** BioSouk  
-**Document:** `docs/06-api-specification.md`  
+**Document:** `docs/07-synthetic-data-generation.md`  
 **Version:** 1.0  
 **Status:** Active
 
@@ -9,682 +9,474 @@
 
 ## 1. Purpose
 
-This document defines the public and internal REST API contracts for BioSouk.
+BioSouk requires realistic data to support:
 
-It establishes:
+- Application development.
+- Integration testing.
+- Frontend demonstrations.
+- Database validation.
+- Marketplace simulations.
+- Analytics and reporting.
+- AI/ML experimentation.
 
-- API conventions and versioning.
-- Authentication and authorization.
-- Resource endpoints.
-- Request and response DTOs.
-- Validation rules.
-- Error handling.
-- Pagination and filtering.
-- Idempotency requirements.
-- API security requirements.
-- OpenAPI documentation requirements.
+The synthetic data generator MUST produce realistic, internally consistent data without depending on real customer or farmer information.
 
-The API acts as the interface between the React frontend, external integrations, and BioSouk's backend application.
+The generator MUST be reusable, configurable, deterministic, and independent of production data.
 
----
+## 2. Design Principles
 
-## 2. API Design Principles
+1. All generated data MUST be synthetic.
+2. Generated data MUST respect domain constraints.
+3. Generation MUST be reproducible using a random seed.
+4. Related entities MUST maintain referential integrity.
+5. Business rules MUST be respected.
+6. Generated datasets MUST support different testing scenarios.
+7. Generation MUST be configurable.
+8. Sensitive production data MUST never be copied.
+9. Generated data MUST be distinguishable from production data.
+10. The generator MUST support incremental development.
 
-The API MUST follow these principles:
+## 3. Data Generation Scope
 
-1. RESTful resource-oriented design.
-2. Consistent naming and response structures.
-3. Explicit request and response DTOs.
-4. Strict input validation.
-5. Authentication for protected operations.
-6. Role-based authorization.
-7. Domain ownership of business rules.
-8. No direct database access from API handlers.
-9. Consistent error responses.
-10. Versioned API contracts.
-11. Idempotency for sensitive operations.
-12. Traceability of business-critical operations.
+The generator covers the following domain entities.
 
-API handlers MUST delegate business operations to their respective application services.
-
----
-
-## 3. API Conventions
-
-### 3.1 Base URL
-
-Development:
-
-`http://localhost:8080/api/v1`
-
-Production:
-
-`https://api.biosouk.com/api/v1`
-
-### 3.2 HTTP Methods
-
-| Method | Purpose |
+| Domain | Synthetic Data |
 |---|---|
-| GET | Retrieve resources |
-| POST | Create resources or execute commands |
-| PUT | Replace resources |
-| PATCH | Partially update resources |
-| DELETE | Remove resources where permitted |
+| Identity | Users, roles, accounts |
+| Agriculture | Farmers, farms, farm locations |
+| Certification | Organic certifications, verification records |
+| Catalog | Categories, products, product attributes |
+| Inventory | Stock levels, batches, movements |
+| Marketplace | Product listings, prices, availability |
+| Orders | Orders, order items, statuses |
+| Payments | Payment transactions, refunds |
+| Traceability | Production, harvesting, processing, distribution events |
 
-### 3.3 Naming Conventions
+Additional entities may be introduced when the domain model evolves.
 
-- Use lowercase resource names.
-- Use plural nouns for collections.
-- Use kebab-case for multiword URL segments.
-- Use UUIDs for resource identifiers.
-- Use ISO 8601 timestamps in UTC.
-- Use JSON for request and response bodies.
+## 4. Dataset Profiles
 
-Example:
+The generator MUST support predefined dataset profiles.
 
-`GET /api/v1/products/{product_id}`
-
-### 3.4 Standard Headers
-
-| Header | Description |
-|---|---|
-| Authorization | Bearer JWT token |
-| Content-Type | application/json |
-| Accept | application/json |
-| X-Request-ID | Request correlation identifier |
-| Idempotency-Key | Unique identifier for retry-safe operations |
-
----
-
-## 4. Authentication and Authorization
-
-### 4.1 Authentication
-
-BioSouk uses JWT-based authentication.
-
-Endpoints:
-
-| Method | Endpoint | Description |
+| Profile | Purpose | Characteristics |
 |---|---|---|
-| POST | `/auth/register` | Register an account |
-| POST | `/auth/login` | Authenticate user |
-| POST | `/auth/refresh` | Refresh access token |
-| POST | `/auth/logout` | Revoke refresh session |
-| GET | `/auth/me` | Retrieve current user |
+| Minimal | Local development | Small dataset |
+| Standard | Integration testing | Realistic marketplace |
+| Large | Performance testing | High-volume records |
+| Demo | Product demonstrations | Curated realistic scenarios |
+| Edge Cases | Business-rule testing | Invalid and exceptional scenarios |
 
-### 4.2 Authorization
+Profiles MUST be configurable rather than hardcoded into generation logic.
 
-Protected endpoints require a valid access token.
+## 5. Generation Dependencies
 
-Authorization is enforced through RBAC and domain-level ownership checks.
-
-Roles include:
-
-- CUSTOMER
-- FARMER
-- SELLER
-- ADMIN
-
-A user may have multiple roles where permitted by the domain model.
-
-### 4.3 Authorization Rules
-
-- Customers manage their own accounts and orders.
-- Farmers manage their own farm information and production records.
-- Sellers manage their own marketplace listings.
-- Administrators manage platform-level operations.
-- Sensitive administrative operations require explicit authorization.
-
-Possessing a role does not automatically grant access to another user's resources.
-
----
-
-## 5. API Modules
-
-The API is organized around BioSouk's bounded contexts.
-
-### 5.1 Identity and Access
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Register |
-| POST | `/auth/login` | Login |
-| POST | `/auth/refresh` | Refresh token |
-| POST | `/auth/logout` | Logout |
-| GET | `/auth/me` | Current user |
-| GET | `/users/{user_id}` | Retrieve user |
-| PATCH | `/users/{user_id}` | Update user |
-
-### 5.2 Farm Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/farms` | Create farm |
-| GET | `/farms` | List farms |
-| GET | `/farms/{farm_id}` | Retrieve farm |
-| PATCH | `/farms/{farm_id}` | Update farm |
-| GET | `/farms/{farm_id}/certifications` | List certifications |
-| POST | `/farms/{farm_id}/certifications` | Submit certification |
-
-### 5.3 Product Catalog
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/products` | Create product |
-| GET | `/products` | Search products |
-| GET | `/products/{product_id}` | Retrieve product |
-| PATCH | `/products/{product_id}` | Update product |
-| DELETE | `/products/{product_id}` | Archive product |
-| GET | `/products/{product_id}/traceability` | Retrieve traceability information |
-
-Product search supports:
-
-- Category.
-- Farm.
-- Organic status.
-- Availability.
-- Price range.
-- Geographic location.
-- Certification status.
-
-### 5.4 Inventory
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/inventory` | List inventory |
-| GET | `/inventory/{product_id}` | Retrieve inventory |
-| POST | `/inventory/adjustments` | Record adjustment |
-| GET | `/inventory/{product_id}/movements` | Retrieve movements |
-
-Inventory changes MUST be validated by the inventory domain.
-
-### 5.5 Orders
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/orders` | Create order |
-| GET | `/orders` | List customer orders |
-| GET | `/orders/{order_id}` | Retrieve order |
-| POST | `/orders/{order_id}/cancel` | Request cancellation |
-| GET | `/orders/{order_id}/items` | Retrieve order items |
-
-Order creation MUST validate product availability and applicable pricing rules.
-
-### 5.6 Payments
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/payments` | Initiate payment |
-| GET | `/payments/{payment_id}` | Retrieve payment |
-| POST | `/payments/{payment_id}/refund` | Request refund |
-| POST | `/payments/webhooks/{provider}` | Receive payment provider events |
-
-Payment processing MUST use a trusted payment provider.
-
-Payment webhooks MUST be authenticated and idempotently processed.
-
-### 5.7 Traceability
-
-Traceability is a core BioSouk capability.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/traceability/products/{product_id}` | Product traceability |
-| GET | `/traceability/batches/{batch_id}` | Batch history |
-| GET | `/traceability/batches/{batch_id}/events` | Batch events |
-| GET | `/traceability/products/{product_id}/journey` | Product journey |
-
-Traceability responses MUST expose only verified and authorized information.
-
-The API MUST NOT represent unverified claims as certified organic status.
-
-### 5.8 Administration and Audit
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/admin/users` | List users |
-| PATCH | `/admin/users/{user_id}/status` | Change account status |
-| GET | `/admin/certifications` | Review certifications |
-| POST | `/admin/certifications/{id}/approve` | Approve certification |
-| POST | `/admin/certifications/{id}/reject` | Reject certification |
-| GET | `/admin/audit-logs` | Retrieve audit records |
-
-Administrative operations MUST generate audit records.
-
----
-
-## 6. Request and Response DTOs
-
-API DTOs MUST be separate from database models and internal domain entities.
-
-### 6.1 Product Creation Request
-
-`POST /api/v1/products`
-
-Example:
-
-```json
-{
-  "name": "Organic Tomatoes",
-  "description": "Fresh organic tomatoes",
-  "category_id": "uuid",
-  "farm_id": "uuid",
-  "price": {
-    "amount": "4.50",
-    "currency": "CAD"
-  },
-  "unit": "kg",
-  "organic_status": "certified"
-}
-```
-
-### 6.2 Product Response
-
-```json
-{
-  "id": "uuid",
-  "name": "Organic Tomatoes",
-  "description": "Fresh organic tomatoes",
-  "farm_id": "uuid",
-  "price": {
-    "amount": "4.50",
-    "currency": "CAD"
-  },
-  "unit": "kg",
-  "organic_status": "certified",
-  "availability": "available",
-  "created_at": "2026-11-06T12:00:00Z",
-  "updated_at": "2026-11-06T12:00:00Z"
-}
-```
-
-The API MUST use decimal-safe monetary representations rather than floating-point arithmetic.
-
-Organic certification status MUST be derived from validated domain records, not trusted directly from client input.
-
-### 6.3 Order Creation Request
-
-`POST /api/v1/orders`
-
-```json
-{
-  "items": [
-    {
-      "product_id": "uuid",
-      "quantity": "2.00"
-    }
-  ],
-  "shipping_address_id": "uuid"
-}
-```
-
-The server MUST determine prices, calculate totals, validate availability, and apply business rules.
-
-Clients MUST NOT supply authoritative order totals.
-
-### 6.4 Standard Success Response
-
-```json
-{
-  "data": {
-    "id": "uuid"
-  },
-  "meta": {
-    "request_id": "uuid"
-  }
-}
-```
-
-Collection responses may additionally include pagination metadata.
-
----
-
-## 7. Validation Rules
-
-All incoming requests MUST be validated before executing application use cases.
-
-Validation includes:
-
-- Required fields.
-- Field length restrictions.
-- Valid UUIDs.
-- Valid email addresses.
-- Positive quantities.
-- Valid currency codes.
-- Valid enum values.
-- Valid timestamps.
-- Resource ownership.
-- Business-rule constraints.
-
-Domain invariants MUST be enforced by the domain/application layers, not exclusively by HTTP validation.
-
-Invalid requests MUST NOT produce partial business operations.
-
----
-
-## 8. Error Handling
-
-### 8.1 Standard Error Format
-
-All API errors MUST follow a consistent structure.
-
-```json
-{
-  "error": {
-    "code": "PRODUCT_NOT_AVAILABLE",
-    "message": "The requested product is unavailable.",
-    "details": [],
-    "request_id": "uuid"
-  }
-}
-```
-
-### 8.2 HTTP Status Codes
-
-| Status | Meaning |
-|---|---|
-| 200 | Successful request |
-| 201 | Resource created |
-| 202 | Request accepted for asynchronous processing |
-| 204 | Successful operation without response body |
-| 400 | Invalid request |
-| 401 | Authentication required |
-| 403 | Permission denied |
-| 404 | Resource not found |
-| 409 | Resource conflict |
-| 422 | Business validation failure |
-| 429 | Rate limit exceeded |
-| 500 | Internal server error |
-| 503 | Service temporarily unavailable |
-
-### 8.3 Error Codes
-
-Examples:
-
-- `VALIDATION_ERROR`
-- `UNAUTHORIZED`
-- `FORBIDDEN`
-- `RESOURCE_NOT_FOUND`
-- `PRODUCT_NOT_AVAILABLE`
-- `INSUFFICIENT_INVENTORY`
-- `ORDER_ALREADY_CANCELLED`
-- `PAYMENT_FAILED`
-- `CERTIFICATION_NOT_VALID`
-- `IDEMPOTENCY_CONFLICT`
-- `INTERNAL_ERROR`
-
-Internal implementation details, database errors, credentials, and stack traces MUST never be exposed to API clients.
-
----
-
-## 9. Pagination, Filtering and Sorting
-
-Collection endpoints MUST support pagination.
-
-Example:
-
-`GET /api/v1/products?page=1&page_size=20`
-
-Supported parameters:
-
-| Parameter | Description |
-|---|---|
-| page | Page number |
-| page_size | Number of records |
-| sort_by | Sorting field |
-| sort_order | asc or desc |
-| search | Text search |
-| category_id | Filter by category |
-| farm_id | Filter by farm |
-| min_price | Minimum price |
-| max_price | Maximum price |
-
-Default page size: 20.
-
-Maximum page size: 100.
-
-The backend MUST validate pagination and sorting parameters.
-
-### Pagination Response
-
-```json
-{
-  "data": [],
-  "meta": {
-    "page": 1,
-    "page_size": 20,
-    "total_items": 120,
-    "total_pages": 6
-  }
-}
-```
-
----
-
-## 10. Idempotency
-
-Idempotency MUST be supported for operations where duplicate execution could cause financial or business inconsistencies.
-
-Examples:
-
-- Order creation.
-- Payment initiation.
-- Refund requests.
-- Payment webhook processing.
-- Inventory adjustments.
-
-Clients MUST provide an `Idempotency-Key` header for supported operations.
-
-The backend MUST:
-
-1. Associate the key with the authenticated client and operation.
-2. Store the original operation result.
-3. Return the original result for a valid retry.
-4. Reject reuse with a different request payload.
-5. Apply an explicit retention policy.
-
----
-
-## 11. Security Requirements
-
-The API MUST enforce:
-
-- HTTPS in production.
-- JWT signature and expiration validation.
-- Role-based access control.
-- Resource ownership validation.
-- Request payload validation.
-- Rate limiting.
-- CORS restrictions.
-- Secure secret management.
-- SQL injection protection through parameterized queries.
-- Protection against mass assignment.
-- Audit logging for sensitive operations.
-- Secure payment webhook verification.
-
-Sensitive information MUST NOT appear in application logs.
-
----
-
-## 12. Asynchronous Processing
-
-Long-running or externally dependent operations MUST NOT block HTTP request handling unnecessarily.
-
-Examples:
-
-- Payment provider interactions.
-- External certification verification.
-- Notification delivery.
-- Large traceability exports.
-
-The API may return HTTP 202 when processing continues asynchronously.
-
-Example:
-
-```json
-{
-  "data": {
-    "operation_id": "uuid",
-    "status": "pending"
-  }
-}
-```
-
-The API MUST expose an appropriate status endpoint for asynchronous operations where clients need to track completion.
-
----
-
-## 13. API Architecture
-
-The request lifecycle follows:
+Data generation MUST follow dependency order.
 
 ```text
-React / External Client
-        |
-        v
-   Axum Router
-        |
-        v
- Middleware
- - Authentication
- - Authorization
- - Request ID
- - Rate Limiting
-        |
-        v
-   API Handler
-        |
-        v
-   Request DTO
-        |
-        v
- Application Service
-        |
-        v
-   Domain Model
-        |
-        v
- Repository Interface
-        |
-        v
- SQLx Repository
-        |
-        v
-    PostgreSQL
+Users
+  |
+  v
+Farmers
+  |
+  v
+Farms
+  |
+  v
+Certifications
+  |
+  v
+Product Categories
+  |
+  v
+Products
+  |
+  v
+Inventory & Batches
+  |
+  v
+Product Listings
+  |
+  v
+Orders
+  |
+  v
+Payments
+  |
+  v
+Traceability Events
 ```
 
-Rules:
+The generator MUST create parent records before dependent records.
 
-- Handlers MUST remain thin.
-- Business logic MUST NOT live in handlers.
-- Repositories MUST be accessed through application/domain-defined interfaces.
-- Each bounded context owns its business operations.
-- Cross-context communication MUST use defined application interfaces or domain events.
-- API DTOs MUST NOT expose persistence models.
+Generation MUST respect the actual relationships defined in the domain model.
 
----
+## 6. Realism Requirements
 
-## 14. OpenAPI Documentation
+Generated data SHOULD represent realistic agricultural marketplace scenarios.
 
-BioSouk MUST maintain an OpenAPI 3.x specification.
+### 6.1 Farmers and Farms
 
-The specification MUST document:
+Generate:
 
-- Endpoints and HTTP methods.
-- Request schemas.
-- Response schemas.
-- Authentication requirements.
-- Authorization requirements.
-- Query parameters.
-- Error responses.
-- Idempotency requirements.
-- Examples.
+- Farmer profiles.
+- Farm names.
+- Farm locations.
+- Farm sizes.
+- Agricultural activities.
+- Production capabilities.
 
-The OpenAPI specification MUST remain synchronized with the implemented API.
+Geographic data SHOULD reflect the intended BioSouk operating region.
 
-Recommended endpoints:
+### 6.2 Certifications
 
-- `/docs` — Interactive API documentation.
-- `/openapi.json` — OpenAPI specification.
+Generate:
 
-These endpoints may be restricted in production.
+- Certification type.
+- Issuing organization.
+- Issue date.
+- Expiration date.
+- Verification status.
+- Associated farm.
 
----
+Certification states MUST include realistic valid, expired, pending, and rejected scenarios.
 
-## 15. API Testing Requirements
+Synthetic certification records MUST NOT be presented as genuine third-party certifications.
 
-API tests MUST cover:
+### 6.3 Products
 
-### Functional Testing
+Generate products such as:
 
-- Successful resource creation.
-- Resource retrieval.
-- Resource updates.
-- Resource deletion or archival.
-- Search and filtering.
-- Pagination.
+- Tomatoes.
+- Potatoes.
+- Carrots.
+- Apples.
+- Strawberries.
+- Lettuce.
+- Cucumbers.
+- Onions.
 
-### Security Testing
+Product attributes include:
 
-- Missing JWT.
-- Invalid JWT.
-- Expired JWT.
-- Insufficient permissions.
-- Unauthorized resource access.
-- Invalid ownership.
+- Name.
+- Category.
+- Description.
+- Unit.
+- Price.
+- Organic status.
+- Farm ownership.
+- Availability.
 
-### Business Rule Testing
+Product generation MUST respect category and farm relationships.
 
-- Invalid organic certification.
-- Unavailable products.
-- Insufficient inventory.
-- Invalid order cancellation.
-- Duplicate payment requests.
+### 6.4 Inventory
 
-### Reliability Testing
+Generate:
 
-- Idempotent retries.
-- Concurrent requests.
-- Payment webhook retries.
-- Database failures.
-- External provider failures.
+- Product batches.
+- Available quantities.
+- Reserved quantities.
+- Inventory movements.
+- Expiration dates where applicable.
+- Stock adjustments.
 
-Tests MUST include both successful and failure scenarios.
+Inventory quantities MUST remain consistent with the inventory business rules.
 
----
+### 6.5 Orders and Payments
 
-## 16. Non-Negotiable Rules
+Generate realistic customer transactions.
 
-1. All public APIs MUST be versioned.
-2. All protected endpoints MUST enforce authentication.
-3. All sensitive operations MUST enforce authorization.
-4. Business rules MUST remain inside their owning domains.
-5. API DTOs MUST remain independent of database entities.
-6. Monetary values MUST use decimal-safe representations.
-7. Organic certification claims MUST be backed by verified records.
-8. Payment operations MUST support idempotency.
-9. Errors MUST follow the standard error format.
-10. Sensitive operations MUST be auditable.
-11. API changes MUST preserve backward compatibility within a version or explicitly introduce a new version.
-12. OpenAPI documentation MUST reflect the actual implementation.
+Order scenarios MUST include:
 
----
+- Pending orders.
+- Confirmed orders.
+- Processing orders.
+- Shipped orders.
+- Delivered orders.
+- Cancelled orders.
 
-## 17. Definition of Done
+Payment scenarios MUST include:
 
-The API specification is considered complete when:
+- Pending payments.
+- Successful payments.
+- Failed payments.
+- Refunds.
 
-- [ ] All bounded-context API responsibilities are documented.
-- [ ] Resource endpoints are defined.
-- [ ] Request and response DTO conventions are established.
-- [ ] Authentication and authorization rules are defined.
-- [ ] Validation rules are documented.
-- [ ] Error response conventions are defined.
-- [ ] Pagination and filtering are specified.
-- [ ] Idempotency requirements are established.
-- [ ] Security requirements are documented.
-- [ ] OpenAPI requirements are established.
-- [ ] API testing requirements are documented.
+Order totals MUST be calculated from order items and applicable pricing rules.
+
+### 6.6 Traceability
+
+Generate traceability events such as:
+
+- Production started.
+- Harvest completed.
+- Quality inspection.
+- Packaging completed.
+- Distribution started.
+- Delivery completed.
+
+Events MUST maintain chronological consistency and reference valid products or batches.
+
+## 7. Generator Architecture
+
+The generator MUST be implemented as a reusable application component.
+
+Suggested structure:
+
+```text
+synthetic-data/
+├── config/
+│   ├── profiles.yaml
+│   └── generator.yaml
+│
+├── src/
+│   ├── generators/
+│   │   ├── users.py
+│   │   ├── farms.py
+│   │   ├── certifications.py
+│   │   ├── products.py
+│   │   ├── inventory.py
+│   │   ├── orders.py
+│   │   ├── payments.py
+│   │   └── traceability.py
+│   │
+│   ├── orchestration/
+│   │   ├── pipeline.py
+│   │   └── dependencies.py
+│   │
+│   ├── validation/
+│   │   ├── integrity.py
+│   │   └── business_rules.py
+│   │
+│   ├── exporters/
+│   │   ├── json_exporter.py
+│   │   └── database_loader.py
+│   │
+│   └── cli.py
+│
+├── tests/
+│   ├── test_generators.py
+│   ├── test_integrity.py
+│   └── test_reproducibility.py
+│
+└── README.md
+```
+
+The implementation language and runtime MUST follow the project's established technology decisions.
+
+The generator MUST remain logically separate from BioSouk's production application.
+
+## 8. Configuration
+
+Generation MUST be configurable through YAML configuration files and CLI arguments.
+
+Example:
+
+```yaml
+profile: standard
+
+seed: 42
+
+region:
+  country: Canada
+  currency: CAD
+
+volumes:
+  users: 100
+  farmers: 20
+  farms: 25
+  certifications: 30
+  products: 200
+  batches: 300
+  orders: 500
+
+options:
+  include_edge_cases: false
+  include_expired_certifications: true
+  include_traceability: true
+```
+
+The generator MUST validate configuration before execution.
+
+## 9. Reproducibility
+
+The generator MUST support deterministic generation.
+
+Given:
+
+- Identical configuration.
+- Identical random seed.
+- Identical generator version.
+
+The generator SHOULD produce equivalent datasets.
+
+The random seed MUST be configurable.
+
+Example:
+
+```bash
+python -m synthetic_data generate --profile standard --seed 42
+```
+
+Reproducibility MUST be covered by automated tests.
+
+## 10. Output Formats
+
+The generator MUST support:
+
+### JSON
+
+Used for:
+
+- API integration testing.
+- Frontend development.
+- Data inspection.
+- Test fixtures.
+
+### PostgreSQL
+
+Used for:
+
+- Local development.
+- Integration testing.
+- End-to-end testing.
+
+Additional formats such as CSV MAY be supported for analytics and data science workflows.
+
+Database loading MUST use the application's database schema and respect constraints.
+
+## 11. Data Validation
+
+Every generated dataset MUST pass validation before being considered ready.
+
+Validation MUST cover:
+
+### Structural Integrity
+
+- Required fields.
+- Valid data types.
+- Unique identifiers.
+- Referential integrity.
+- Valid enum values.
+
+### Business Integrity
+
+- Orders reference existing customers.
+- Order items reference existing products.
+- Farms reference valid owners.
+- Certifications reference valid farms.
+- Inventory quantities respect domain constraints.
+- Payments reference valid orders.
+- Traceability events reference valid batches.
+- Event timestamps follow chronological rules.
+
+### Data Quality
+
+- No unintended duplicate records.
+- No impossible dates.
+- No invalid monetary values.
+- No negative quantities unless explicitly permitted by a movement type.
+- No contradictory business statuses.
+
+## 12. Edge Case Scenarios
+
+The generator MUST support dedicated scenarios for testing exceptional conditions.
+
+Examples:
+
+| Scenario | Expected Purpose |
+|---|---|
+| Expired certification | Prevent invalid organic claims |
+| Pending certification | Test verification workflow |
+| Zero inventory | Test product availability |
+| Insufficient stock | Test order rejection |
+| Cancelled order | Test cancellation rules |
+| Failed payment | Test payment recovery |
+| Duplicate payment request | Test idempotency |
+| Expired product batch | Test inventory eligibility |
+| Missing traceability event | Test traceability completeness |
+
+Edge cases MUST be explicitly enabled rather than appearing randomly in normal datasets.
+
+## 13. Safety and Isolation
+
+The generator MUST:
+
+- Never connect to production databases.
+- Never import production customer information.
+- Never use real personal information.
+- Clearly identify synthetic records.
+- Require explicit configuration for database writes.
+- Prevent accidental destructive operations.
+- Support isolated development and test environments.
+
+Database reset operations MUST require explicit confirmation or a dedicated test-environment safeguard.
+
+## 14. Execution Interface
+
+The generator MUST provide a CLI.
+
+Example commands:
+
+```bash
+# Generate minimal dataset
+python -m synthetic_data generate --profile minimal
+
+# Generate standard dataset
+python -m synthetic_data generate --profile standard --seed 42
+
+# Generate edge cases
+python -m synthetic_data generate --profile edge-cases
+
+# Export JSON
+python -m synthetic_data generate --profile demo --format json
+
+# Load into development database
+python -m synthetic_data generate --profile standard --target database
+
+# Validate generated dataset
+python -m synthetic_data validate
+```
+
+The CLI MUST report:
+
+- Selected profile.
+- Random seed.
+- Number of generated records.
+- Generation duration.
+- Validation results.
+- Export or loading status.
+
+## 15. Testing Requirements
+
+Automated tests MUST verify:
+
+- Generator configuration.
+- Entity generation.
+- Referential integrity.
+- Business-rule consistency.
+- Seed reproducibility.
+- JSON export.
+- Database loading.
+- Edge case generation.
+- Production environment protection.
+
+The generator MUST NOT be considered complete until generated datasets pass all validation tests.
+
+## 16. Definition of Done
+
+- [ ] Generator architecture implemented.
+- [ ] Dataset profiles implemented.
+- [ ] Entity generators implemented.
+- [ ] Dependency orchestration implemented.
+- [ ] Seed-based reproducibility supported.
+- [ ] JSON export supported.
+- [ ] PostgreSQL loading supported.
+- [ ] Referential integrity validation implemented.
+- [ ] Business-rule validation implemented.
+- [ ] Edge case scenarios supported.
+- [ ] Automated tests implemented.
+- [ ] Production safety protections implemented.
+- [ ] CLI documented.
 
 ---
 
