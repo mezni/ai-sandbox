@@ -1,5 +1,5 @@
-use axum::http::StatusCode;
 use axum::extract::State;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json};
 use serde::Serialize;
 
@@ -10,9 +10,7 @@ pub struct HealthCheck {
 }
 
 pub async fn health(State(state): State<crate::AppState>) -> impl IntoResponse {
-    let db_ok = sqlx::query("SELECT 1")
-        .fetch_one(&state.db_pool)
-        .await;
+    let db_ok = sqlx::query("SELECT 1").fetch_one(&state.db_pool).await;
 
     let database = match db_ok {
         Ok(_) => "connected",
