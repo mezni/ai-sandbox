@@ -120,10 +120,15 @@ Authorization is enforced through RBAC and domain-level ownership checks.
 
 Roles include:
 
-- CUSTOMER
-- FARMER
-- SELLER
-- ADMIN
+- `admin`
+- `producer`
+- `customer`
+- `support`
+
+Role codes are canonical per the project constitution. The API's former
+`CUSTOMER`, `FARMER`, `SELLER`, and `ADMIN` vocabulary is reconciled by
+[ADR 0001](adr/0001-role-vocabulary-reconciliation.md): `FARMER` and `SELLER`
+map to `producer` for this milestone.
 
 A user may have multiple roles where permitted by the domain model.
 

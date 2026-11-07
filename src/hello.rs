@@ -10,23 +10,22 @@ pub struct HealthCheck {
 }
 
 pub async fn health(State(state): State<crate::AppState>) -> impl IntoResponse {
-    let db_ok = sqlx::query("SELECT 1").fetch_one(&state.db_pool).await;
-
-    let database = match db_ok {
-        Ok(_) => "connected",
-        Err(_) => "disconnected",
+    let (code, database) = match crate::db::health_check(&state.db_pool).await {
+        Ok(()) => (StatusCode::OK, "connected"),
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, "disconnected"),
     };
 
-    let _body = Json(HealthCheck {
+    let body = Json(HealthCheck {
         status: "healthy".to_string(),
         database: database.to_string(),
     });
 
-    StatusCode::OK.into_response()
+    (code, body).into_response()
 }
 
-pub async fn status(State(_data): State<crate::AppState>) -> impl IntoResponse {
+pub async fn status(State(_state): State<crate::AppState>) -> impl IntoResponse {
     Json(serde_json::json!({
-        "database": "configured"
+        "status": "ok",
+        "service": "biosouk"
     }))
 }

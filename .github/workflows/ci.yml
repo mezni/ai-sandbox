@@ -6,64 +6,85 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   check:
     name: Check, Format, Lint
     runs-on: ubuntu-latest
-    factors:
-      rust:
-        - "1.96"
-
     steps:
       - uses: actions/checkout@v4
 
-      - name. Install Rust
+      - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: "1.96"
+          components: rustfmt, clippy
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v3
+      - name: Cache Cargo
+        uses: actions/cache@v4
         with:
-          path: target
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
-
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Check formatting
         run: cargo fmt --check
 
       - name: Clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Build check
-        run: cargo check --verbose
+        run: cargo check --all-targets
 
   test:
     name: Test
     runs-on: ubuntu-latest
-    factors:
-      rust:
-        - "1.96"
     needs: check
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: biosouk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/biosouk
+      JWT_SECRET: ci-secret-ci-secret-ci-secret-123456
+      APP_ENV: test
 
     steps:
       - uses: actions/checkout@v4
 
-      - name. Install Rust
+      - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: "1.96"
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v3
+      - name: Cache Cargo
+        uses: actions/cache@v4
         with:
-          path: target
-          key: cargo-registry-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
 
       - name: Run tests
         run: cargo test --verbose

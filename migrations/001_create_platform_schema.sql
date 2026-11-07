@@ -2,12 +2,8 @@
 -- Per docs/05-database-design.md §4.2-4.6
 -- Creates platform schema tables: users, roles, permissions, user_roles, role_permissions
 
--- Create the platform schema (if not using schema-qualified tables, set search_path)
--- DO $$ BEGIN
---     CREATE SCHEMA IF NOT EXISTS platform;
--- EXCEPTION
---     WHEN duplicate_schema THEN null;
--- END $$;
+-- Create the platform schema (required before schema-qualified tables)
+CREATE SCHEMA IF NOT EXISTS platform;
 
 -- Create TABLE platform.users
 CREATE TABLE IF NOT EXISTS platform.users (

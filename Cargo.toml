@@ -5,8 +5,25 @@ edition = "2021"
 
 [dependencies]
 axum = "0.7"
-sqlx = { version = "0.7", features = ["postgres"] , default-features = false }
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "time", "uuid", "migrate", "macros", "json"], default-features = false }
 tokio = { version = "1.37", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-cors = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["serde", "macros", "formatting"] }
+jsonwebtoken = "9"
+argon2 = "0.6"
+sha2 = "0.10"
+base64 = "0.22"
+rand = "0.8"
+hex = "0.4"
+thiserror = "1"
+anyhow = "1"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
